@@ -102,4 +102,10 @@
     }
 
     function updateWordList(word) {
-      const el
+  const el = document.getElementById(`word-${word}`);
+  if (el) el.classList.add("foundWord");
+}
+fillEmptyCells();
+renderGrid();
+renderWordList();
+foundWords.forEach(updateWordList);
