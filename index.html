@@ -105,6 +105,70 @@
   const el = document.getElementById(`word-${word}`);
   if (el) el.classList.add("foundWord");
 }
+   function fillEmptyCells() {
+  for (let i = 0; i < puzzle.length; i++) {
+    if (!puzzle[i]) {
+      puzzle[i] = String.fromCharCode(65 + Math.floor(Math.random() * 26));
+    }
+  }
+}
+
+function renderGrid() {
+  for (let i = 0; i < gridSize; i++) {
+    const tr = document.createElement("tr");
+    for (let j = 0; j < gridSize; j++) {
+      const td = document.createElement("td");
+      const index = i * gridSize + j;
+      td.textContent = puzzle[index];
+      td.dataset.row = i;
+      td.dataset.col = j;
+      td.addEventListener("mousedown", () => handleMouseDown(td));
+      td.addEventListener("mouseover", () => handleMouseOver(td));
+      td.addEventListener("mouseup", handleMouseUp);
+      tr.appendChild(td);
+    }
+    grid.appendChild(tr);
+  }
+}
+
+function handleMouseDown(cell) {
+  isDragging = true;
+  selectionPath = [cell];
+  cell.classList.add("selected");
+}
+
+function handleMouseOver(cell) {
+  if (!isDragging || selectionPath.includes(cell)) return;
+  selectionPath.push(cell);
+  cell.classList.add("selected");
+}
+
+function handleMouseUp() {
+  isDragging = false;
+  const word = selectionPath.map(c => c.textContent).join("");
+  if (words[word] && !foundWords.includes(word)) {
+    selectionPath.forEach(c => {
+      c.classList.remove("selected");
+      c.classList.add("found");
+    });
+    foundWords.push(word);
+    localStorage.setItem("foundWords", JSON.stringify(foundWords));
+    const caption = document.createElement("div");
+    caption.className = "caption";
+    caption.textContent = `${word}: ${words[word]}`;
+    captionsDiv.appendChild(caption);
+    updateWordList(word);
+    if (foundWords.length === Object.keys(words).length) {
+      document.getElementById("banner").style.display = "block";
+    }
+  } else {
+    selectionPath.forEach(c => c.classList.remove("selected"));
+  }
+  selectionPath = [];
+}
+
+document.body.onmousedown = () => false;
+ 
 fillEmptyCells();
 renderGrid();
 renderWordList();
