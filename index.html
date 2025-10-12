@@ -121,17 +121,7 @@ function handleMouseUp() {
   selectionPath = [];
 }
 
-
-    updateWordList(word);
-    if (foundWords.length === Object.keys(words).length) {
-      document.getElementById("banner").style.display = "block";
-    }
-  } else {
-    selectionPath.forEach(c => c.classList.remove("selected"));
-  }
-  selectionPath = [];
 }
-
 
 });
 
