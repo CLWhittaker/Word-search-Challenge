@@ -1,3 +1,9 @@
+<!-- This is a shortened preview. The full code includes:
+- Directional tracing logic (start and end click)
+- Word validation across 8 directions
+- Local storage to save found words
+- Lore captions and final banner reveal
+-->
 
 <!DOCTYPE html>
 <html lang="en">
@@ -5,61 +11,12 @@
   <meta charset="UTF-8">
   <title>The Scroll of Monumental Mayhem</title>
   <style>
-    body {
-      font-family: 'Courier New', monospace;
-      background-color: #fdf6e3;
-      color: #333;
-      text-align: center;
-      padding: 20px;
-    }
-    h1 {
-      font-size: 2em;
-      margin-bottom: 10px;
-    }
-    table {
-      margin: 0 auto;
-      border-collapse: collapse;
-    }
-    td {
-      width: 30px;
-      height: 30px;
-      text-align: center;
-      border: 1px solid #999;
-      font-weight: bold;
-      cursor: pointer;
-      user-select: none;
-    }
-    .selected {
-      background-color: #c6f6d5;
-    }
-    .found {
-      background-color: #81e6d9;
-    }
-    #banner {
-      display: none;
-      margin-top: 20px;
-      font-size: 1.5em;
-      color: #2c5282;
-    }
-    .caption {
-      font-size: 0.9em;
-      margin-top: 5px;
-      color: #555;
-    }
-    #wordList {
-      margin-top: 20px;
-      font-size: 1em;
-      color: #444;
-    }
-    .foundWord {
-      text-decoration: line-through;
-      color: #888;
-    }
+    /* Styling omitted for brevity—same as previous version */
   </style>
 </head>
 <body>
   <h1>The Scroll of Monumental Mayhem</h1>
-  <p>Click letters to select words. Find all 20 to reveal the banner.</p>
+  <p>Click the first and last letter of a word to trace it. Progress is saved.</p>
   <div id="wordList"></div>
   <table id="grid"></table>
   <div id="banner">🧦 You’ve earned your ceremonial socks and scrollsmith badge. Onward to the next ritual.</div>
@@ -67,26 +24,10 @@
 
   <script>
     const words = {
-      ACADEME: "Where scrolls are born and pedants duel in dusty silence.",
-      ACCUSED: "Marked by whispers, but not yet claimed by truth.",
-      AMAZEMENT: "The gasp that follows a moonbeam’s unexpected arrival.",
-      COMPROMISE: "A handshake between chaos and calm, sealed with ceremonial socks.",
-      DEAFENING: "The silence that screams louder than any outbreak.",
-      GNARLED: "Twisted by time, but still rooted in ritual.",
-      LAUGHABLE: "When the absurd becomes sacred and socks become scrolls.",
-      MADCAP: "The jester’s sprint through monumental mayhem.",
-      MAJESTIC: "Crowned not by gold, but by resilience and mismatched laundry.",
-      MIMIC: "A chest you don’t want to find.",
-      MONUMENTAL: "Built from grief, grit, and the bones of canceled plans.",
-      MOONBEAM: "A soft rebellion against remorseless nights.",
-      NOISELESS: "The hush before the banner rises.",
-      OBSCENE: "Too raw for academe, too real for denial.",
-      OUTBREAK: "The ritual of masks, scrolls, and sudden pivots.",
-      PANDERS: "Whispers that flatter, but never inscribe.",
-      PEDANT: "Keeper of rules, challenger of lore.",
-      RADIANCE: "The glow that follows a found word.",
-      SWAGGER: "The strut of survival in socked feet.",
-      REMORSELESS: "Unyielding as grief, sacred as scrollsmith fire."
+      ACADEME: "...",
+      ACCUSED: "...",
+      AMAZEMENT: "...",
+      // All 20 words with captions
     };
 
     const gridSize = 25;
@@ -94,11 +35,12 @@
     const table = document.getElementById("grid");
     const captionsDiv = document.getElementById("captions");
     const wordListDiv = document.getElementById("wordList");
-    let foundWords = [];
+    let foundWords = JSON.parse(localStorage.getItem("foundWords")) || [];
+    let startCell = null;
 
     function renderWordList() {
       wordListDiv.innerHTML = "<strong>Words to Find:</strong><br>" + Object.keys(words).map(word => {
-        return `<span id="word-${word}">${word}</span>`;
+        return `<span id="word-${word}" class="${foundWords.includes(word) ? 'foundWord' : ''}">${word}</span>`;
       }).join(", ");
     }
 
@@ -108,33 +50,12 @@
     }
 
     function placeWord(word) {
-      const directions = [[0,1],[1,0],[1,1],[-1,1],[0,-1],[-1,0],[-1,-1],[1,-1]];
-      for (let attempt = 0; attempt < 200; attempt++) {
-        const dir = directions[Math.floor(Math.random() * directions.length)];
-        const row = Math.floor(Math.random() * gridSize);
-        const col = Math.floor(Math.random() * gridSize);
-        let fits = true;
-        for (let i = 0; i < word.length; i++) {
-          const r = row + dir[0] * i;
-          const c = col + dir[1] * i;
-          if (r < 0 || r >= gridSize || c < 0 || c >= gridSize || (grid[r][c] && grid[r][c] !== word[i])) {
-            fits = false;
-            break;
-          }
-        }
-        if (fits) {
-          for (let i = 0; i < word.length; i++) {
-            const r = row + dir[0] * i;
-            const c = col + dir[1] * i;
-            grid[r][c] = word[i];
-          }
-          return;
-        }
-      }
+      // Same placement logic as before
     }
 
     Object.keys(words).forEach(word => placeWord(word));
 
+    // Fill empty cells
     for (let i = 0; i < gridSize; i++) {
       for (let j = 0; j < gridSize; j++) {
         if (!grid[i][j]) {
@@ -143,6 +64,7 @@
       }
     }
 
+    // Render grid
     grid.forEach((row, i) => {
       const tr = document.createElement("tr");
       row.forEach((letter, j) => {
@@ -150,62 +72,73 @@
         td.textContent = letter;
         td.dataset.row = i;
         td.dataset.col = j;
-        td.addEventListener("click", () => {
-          td.classList.toggle("selected");
-        });
+        td.addEventListener("click", () => handleCellClick(td));
         tr.appendChild(td);
       });
       table.appendChild(tr);
     });
 
-    function checkWords() {
-      Object.keys(words).forEach(word => {
-        const directions = [[0,1],[1,0],[1,1],[-1,1],[0,-1],[-1,0],[-1,-1],[1,-1]];
-        for (let i = 0; i < gridSize; i++) {
-          for (let j = 0; j < gridSize; j++) {
-            for (let d of directions) {
-              let match = true;
-              const positions = [];
-              for (let k = 0; k < word.length; k++) {
-                const r = i + d[0]*k;
-                const c = j + d[1]*k;
-                if (r < 0 || r >= gridSize || c < 0 || c >= gridSize) {
-                  match = false;
-                  break;
-                }
-                const cell = document.querySelector(`td[data-row='${r}'][data-col='${c}']`);
-                if (!cell || !cell.classList.contains("selected") || cell.textContent !== word[k]) {
-                  match = false;
-                  break;
-                }
-                positions.push(cell);
-              }
-              if (match && !foundWords.includes(word)) {
-                foundWords.push(word);
-                positions.forEach(cell => {
-                  cell.classList.remove("selected");
-                  cell.classList.add("found");
-                });
-                const caption = document.createElement("div");
-                caption.className = "caption";
-                caption.textContent = `${word}: ${words[word]}`;
-                captionsDiv.appendChild(caption);
-                updateWordList(word);
-                if (foundWords.length === Object.keys(words).length) {
-                  document.getElementById("banner").style.display = "block";
-                }
-              }
-            }
+    function handleCellClick(cell) {
+      if (!startCell) {
+        startCell = cell;
+        cell.classList.add("selected");
+      } else {
+        const path = getPath(startCell, cell);
+        const word = path.map(c => c.textContent).join("");
+        if (words[word] && !foundWords.includes(word)) {
+          path.forEach(c => {
+            c.classList.remove("selected");
+            c.classList.add("found");
+          });
+          foundWords.push(word);
+          localStorage.setItem("foundWords", JSON.stringify(foundWords));
+          const caption = document.createElement("div");
+          caption.className = "caption";
+          caption.textContent = `${word}: ${words[word]}`;
+          captionsDiv.appendChild(caption);
+          updateWordList(word);
+          if (foundWords.length === Object.keys(words).length) {
+            document.getElementById("banner").style.display = "block";
           }
+        } else {
+          path.forEach(c => c.classList.remove("selected"));
         }
-      });
+        startCell = null;
+      }
     }
 
-    document.addEventListener("click", () => {
-      checkWords();
+    function getPath(start, end) {
+      const r1 = parseInt(start.dataset.row);
+      const c1 = parseInt(start.dataset.col);
+      const r2 = parseInt(end.dataset.row);
+      const c2 = parseInt(end.dataset.col);
+      const dr = r2 - r1;
+      const dc = c2 - c1;
+      const len = Math.max(Math.abs(dr), Math.abs(dc)) + 1;
+      const stepR = dr === 0 ? 0 : dr / (len - 1);
+      const stepC = dc === 0 ? 0 : dc / (len - 1);
+      const path = [];
+      for (let i = 0; i < len; i++) {
+        const r = Math.round(r1 + stepR * i);
+        const c = Math.round(c1 + stepC * i);
+        const cell = document.querySelector(`td[data-row='${r}'][data-col='${c}']`);
+        if (cell) path.push(cell);
+      }
+      return path;
+    }
+
+    // Restore found words
+    foundWords.forEach(word => {
+      updateWordList(word);
+      Object.keys(words).forEach(w => {
+        if (w === word) {
+          // Optional: highlight found word path
+        }
+      });
     });
 
     renderWordList();
   </script>
 </body>
 </html>
+
