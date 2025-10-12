@@ -92,10 +92,11 @@ function handleMouseDown(cell) {
 }
 
 function handleMouseOver(cell) {
-  if (isDragging && !selectionPath.includes(cell)) {
-    selectionPath.push(cell);
-    cell.classList.add("selected");
-  }
+  if (!isDragging || selectionPath.includes(cell)) return;
+  selectionPath.push(cell);
+  cell.classList.add("selected");
+}
+
 }
 function handleMouseUp() {
   isDragging = false;
@@ -119,8 +120,6 @@ function handleMouseUp() {
     selectionPath.forEach(c => c.classList.remove("selected"));
   }
   selectionPath = [];
-}
-
 }
 
 });
