@@ -8,35 +8,92 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>The Scroll of Monumental Mayhem</title>
   <style>
-    /* Styling omitted for brevity—same as previous version */
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      text-align: center;
+      background: #fdf6e3;
+      color: #333;
+    }
+    #grid {
+      margin: 20px auto;
+      border-collapse: collapse;
+    }
+    #grid td {
+      width: 24px;
+      height: 24px;
+      border: 1px solid #ccc;
+      text-align: center;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    .selected {
+      background-color: #cce5ff;
+    }
+    .found {
+      background-color: #b2f2bb;
+      font-weight: bold;
+    }
+    .foundWord {
+      text-decoration: line-through;
+      color: #999;
+    }
+    #banner {
+      display: none;
+      margin-top: 20px;
+      font-size: 18px;
+      color: #007700;
+    }
+    .caption {
+      margin-top: 10px;
+      font-style: italic;
+    }
   </style>
 </head>
 <body>
   <h1>The Scroll of Monumental Mayhem</h1>
-  <p>Click the first and last letter of a word to trace it. Progress is saved.</p>
+  <p>Click and drag to trace a word. Progress is saved.</p>
   <div id="wordList"></div>
   <table id="grid"></table>
   <div id="banner">🧦 You’ve earned your ceremonial socks and scrollsmith badge. Onward to the next ritual.</div>
   <div id="captions"></div>
 
   <script>
-    const words = {
-      ACADEME: "...",
-      ACCUSED: "...",
-      AMAZEMENT: "...",
-      // All 20 words with captions
-    };
-
     const gridSize = 25;
-    const grid = Array.from({ length: gridSize }, () => Array(gridSize).fill(''));
-    const table = document.getElementById("grid");
+    
+ const words = {
+  ACADEME: "Where scrolls are born and pedants duel in dusty silence.",
+  ACCUSED: "Marked by whispers, but not yet claimed by truth.",
+  AMAZEMENT: "The gasp that follows a moonbeam’s unexpected arrival.",
+  COMPROMISE: "A handshake between chaos and calm, sealed with ceremonial socks.",
+  DEAFENING: "The silence that screams louder than any outbreak.",
+  GNARLED: "Twisted by time, but still rooted in ritual.",
+  LAUGHABLE: "When the absurd becomes sacred and socks become scrolls.",
+  MADCAP: "The jester’s sprint through monumental mayhem.",
+  MAJESTIC: "Crowned not by gold, but by resilience and mismatched laundry.",
+  MIMIC: "A chest you don’t want to find.",
+  MONUMENTAL: "Built from grief, grit, and the bones of canceled plans.",
+  MOONBEAM: "A soft rebellion against remorseless nights.",
+  NOISELESS: "The hush before the banner rises.",
+  OBSCENE: "Too raw for academe, too real for denial.",
+  OUTBREAK: "The ritual of masks, scrolls, and sudden pivots.",
+  PANDERS: "Whispers that flatter, but never inscribe.",
+  PEDANT: "Keeper of rules, challenger of lore.",
+  RADIANCE: "The glow that follows a found word.",
+  SWAGGER: "The strut of survival in socked feet.",
+  REMORSELESS: "Unyielding as grief, sacred as scrollsmith fire."
+};
+
+
+    const puzzle = Array(gridSize * gridSize).fill(null);
+    const grid = document.getElementById("grid");
     const captionsDiv = document.getElementById("captions");
     const wordListDiv = document.getElementById("wordList");
     let foundWords = JSON.parse(localStorage.getItem("foundWords")) || [];
-    let startCell = null;
+    let isDragging = false;
+    let selectionPath = [];
 
     function renderWordList() {
       wordListDiv.innerHTML = "<strong>Words to Find:</strong><br>" + Object.keys(words).map(word => {
@@ -45,123 +102,4 @@
     }
 
     function updateWordList(word) {
-      const el = document.getElementById(`word-${word}`);
-      if (el) el.classList.add("foundWord");
-    }
-
-    function placeWord(word) {
-      // Same placement logic as before
-    }
-
-    Object.keys(words).forEach(word => placeWord(word));
-
-    // Fill empty cells
-    for (let i = 0; i < gridSize; i++) {
-      for (let j = 0; j < gridSize; j++) {
-        if (!grid[i][j]) {
-          grid[i][j] = String.fromCharCode(65 + Math.floor(Math.random() * 26));
-        }
-      }
-    }
-
-    // Render grid
-    grid.forEach((row, i) => {
-      const tr = document.createElement("tr");
-      row.forEach((letter, j) => {
-        const td = document.createElement("td");
-        td.textContent = letter;
-        td.dataset.row = i;
-        td.dataset.col = j;
-        
-        td.addEventListener("mousedown", () => handleMouseDown(td));
-        td.addEventListener("mouseover", () => handleMouseOver(td));
-        td.addEventListener("mouseup", handleMouseUp);
-        
-        tr.appendChild(td);
-      });
-      table.appendChild(tr);
-    });
-
-    let isDragging = false;
-let selectionPath = [];
-
-function handleMouseDown(cell) {
-  isDragging = true;
-  selectionPath = [cell];
-  cell.classList.add("selected");
-}
-
-function handleMouseOver(cell) {
-  if (!isDragging || selectionPath.includes(cell)) return;
-  selectionPath.push(cell);
-  cell.classList.add("selected");
-}
-
-}
-function handleMouseUp() {
-  isDragging = false;
-  const word = selectionPath.map(c => c.textContent).join("");
-  if (words[word] && !foundWords.includes(word)) {
-    selectionPath.forEach(c => {
-      c.classList.remove("selected");
-      c.classList.add("found");
-    });
-    foundWords.push(word);
-    localStorage.setItem("foundWords", JSON.stringify(foundWords));
-    const caption = document.createElement("div");
-    caption.className = "caption";
-    caption.textContent = `${word}: ${words[word]}`;
-    captionsDiv.appendChild(caption);
-    updateWordList(word);
-    if (foundWords.length === Object.keys(words).length) {
-      document.getElementById("banner").style.display = "block";
-    }
-  } else {
-    selectionPath.forEach(c => c.classList.remove("selected"));
-  }
-  selectionPath = [];
-}
-
-});
-
-// Prevent text selection during drag
-document.body.onmousedown = () => false;
-
-      }
-    }
-
-    function getPath(start, end) {
-      const r1 = parseInt(start.dataset.row);
-      const c1 = parseInt(start.dataset.col);
-      const r2 = parseInt(end.dataset.row);
-      const c2 = parseInt(end.dataset.col);
-      const dr = r2 - r1;
-      const dc = c2 - c1;
-      const len = Math.max(Math.abs(dr), Math.abs(dc)) + 1;
-      const stepR = dr === 0 ? 0 : dr / (len - 1);
-      const stepC = dc === 0 ? 0 : dc / (len - 1);
-      const path = [];
-      for (let i = 0; i < len; i++) {
-        const r = Math.round(r1 + stepR * i);
-        const c = Math.round(c1 + stepC * i);
-        const cell = document.querySelector(`td[data-row='${r}'][data-col='${c}']`);
-        if (cell) path.push(cell);
-      }
-      return path;
-    }
-
-    // Restore found words
-    foundWords.forEach(word => {
-      updateWordList(word);
-      Object.keys(words).forEach(w => {
-        if (w === word) {
-          // Optional: highlight found word path
-        }
-      });
-    });
-
-    renderWordList();
-  </script>
-</body>
-</html>
-
+      const el
