@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -26,6 +27,7 @@
       border: 1px solid #999;
       font-weight: bold;
       cursor: pointer;
+      user-select: none;
     }
     .selected {
       background-color: #c6f6d5;
@@ -150,7 +152,6 @@
         td.dataset.col = j;
         td.addEventListener("click", () => {
           td.classList.toggle("selected");
-          checkWords();
         });
         tr.appendChild(td);
       });
@@ -159,12 +160,12 @@
 
     function checkWords() {
       Object.keys(words).forEach(word => {
-        const positions = [];
+        const directions = [[0,1],[1,0],[1,1],[-1,1],[0,-1],[-1,0],[-1,-1],[1,-1]];
         for (let i = 0; i < gridSize; i++) {
           for (let j = 0; j < gridSize; j++) {
-            for (let d of [[0,1],[1,0],[1,1],[-1,1],[0,-1],[-1,0],[-1,-1],[1,-1]]) {
+            for (let d of directions) {
               let match = true;
-              positions.length = 0;
+              const positions = [];
               for (let k = 0; k < word.length; k++) {
                 const r = i + d[0]*k;
                 const c = j + d[1]*k;
@@ -190,7 +191,9 @@
                 caption.textContent = `${word}: ${words[word]}`;
                 captionsDiv.appendChild(caption);
                 updateWordList(word);
-                checkCompletion();
+                if (foundWords.length === Object.keys(words).length) {
+                  document.getElementById("banner").style.display = "block";
+                }
               }
             }
           }
@@ -198,14 +201,11 @@
       });
     }
 
-    function checkCompletion() {
-      if (foundWords.length === Object.keys(words).length) {
-        document.getElementById("banner").style.display = "block";
-      }
-    }
+    document.addEventListener("click", () => {
+      checkWords();
+    });
 
     renderWordList();
   </script>
 </body>
 </html>
-
