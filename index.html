@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>The Scroll of Monumental Mayhem</title>
+  <style>
+    body {
+      font-family: 'Courier New', monospace;
+      background-color: #fdf6e3;
+      color: #333;
+      text-align: center;
+      padding: 20px;
+    }
+    h1 {
+      font-size: 2em;
+      margin-bottom: 10px;
+    }
+    table {
+      margin: 0 auto;
+      border-collapse: collapse;
+    }
+    td {
+      width: 30px;
+      height: 30px;
+      text-align: center;
+      border: 1px solid #999;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .found {
+      background-color: #c6f6d5;
+    }
+    #banner {
+      display: none;
+      margin-top: 20px;
+      font-size: 1.5em;
+      color: #2c5282;
+    }
+    .caption {
+      font-size: 0.9em;
+      margin-top: 5px;
+      color: #555;
+    }
+  </style>
+</head>
+<body>
+  <h1>The Scroll of Monumental Mayhem</h1>
+  <p>Find all 20 words hidden in the grid. Hover to reveal lore.</p>
+  <table id="grid"></table>
+  <div id="banner">🧦 You’ve earned your ceremonial socks and scrollsmith badge. Onward to the next ritual.</div>
+
+  <script>
+    const words = {
+      ACADEME: "Where scrolls are born and pedants duel in dusty silence.",
+      ACCUSED: "Marked by whispers, but not yet claimed by truth.",
+      AMAZEMENT: "The gasp that follows a moonbeam’s unexpected arrival.",
+      COMPROMISE: "A handshake between chaos and calm, sealed with ceremonial socks.",
+      DEAFENING: "The silence that screams louder than any outbreak.",
+      GNARLED: "Twisted by time, but still rooted in ritual.",
+      LAUGHABLE: "When the absurd becomes sacred and socks become scrolls.",
+      MADCAP: "The jester’s sprint through monumental mayhem.",
+      MAJESTIC: "Crowned not by gold, but by resilience and mismatched laundry.",
+      MIMIC: "Echoes of truth, wrapped in ceremonial disguise.",
+      MONUMENTAL: "Built from grief, grit, and the bones of canceled plans.",
+      MOONBEAM: "A soft rebellion against remorseless nights.",
+      NOISELESS: "The hush before the banner rises.",
+      OBSCENE: "Too raw for academe, too real for denial.",
+      OUTBREAK: "The ritual of masks, scrolls, and sudden pivots.",
+      PANDERS: "Whispers that flatter, but never inscribe.",
+      PEDANT: "Keeper of rules, challenger of lore.",
+      RADIANCE: "The glow that follows a found word.",
+      SWAGGER: "The strut of survival in socked feet.",
+      REMORSELESS: "Unyielding as grief, sacred as scrollsmith fire."
+    };
+
+    const gridSize = 15;
+    const grid = Array.from({ length: gridSize }, () =>
+      Array.from({ length: gridSize }, () =>
+        String.fromCharCode(65 + Math.floor(Math.random() * 26))
+      )
+    );
+
+    const table = document.getElementById("grid");
+
+    grid.forEach((row, i) => {
+      const tr = document.createElement("tr");
+      row.forEach((letter, j) => {
+        const td = document.createElement("td");
+        td.textContent = letter;
+        td.dataset.row = i;
+        td.dataset.col = j;
+        tr.appendChild(td);
+      });
+      table.appendChild(tr);
+    });
+
+    let foundWords = [];
+
+    Object.keys(words).forEach(word => {
+      const caption = document.createElement("div");
+      caption.className = "caption";
+      caption.id = `caption-${word}`;
+      caption.textContent = `${word}: ${words[word]}`;
+      caption.style.display = "none";
+      document.body.appendChild(caption);
+    });
+
+    table.addEventListener("mouseover", e => {
+      if (e.target.tagName === "TD") {
+        const letter = e.target.textContent;
+        Object.keys(words).forEach(word => {
+          if (word.includes(letter)) {
+            document.getElementById(`caption-${word}`).style.display = "block";
+          }
+        });
+      }
+    });
+
+    table.addEventListener("mouseout", e => {
+      if (e.target.tagName === "TD") {
+        Object.keys(words).forEach(word => {
+          document.getElementById(`caption-${word}`).style.display = "none";
+        });
+      }
+    });
+
+    function checkCompletion() {
+      if (foundWords.length === Object.keys(words).length) {
+        document.getElementById("banner").style.display = "block";
+      }
+    }
+
+    // Placeholder: You can add real word placement logic here
+  </script>
+</body>
+</html>
