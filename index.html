@@ -157,7 +157,7 @@ unplaced.forEach(word => {
     console.error(`❌ Still failed to place: ${word}`);
   }
 });
-
+Object.keys(words).forEach(placeWord); // Place all words
 fillEmptyCells();                      // Fill remaining gaps
 renderGrid();                          // Display the puzzle
 renderWordList();                      // Show word list
@@ -252,7 +252,6 @@ function handleMouseUp() {
 
 document.body.onmousedown = () => false;
  
-Object.keys(words).forEach(placeWord);
 fillEmptyCells();
 renderGrid();
 renderWordList();
