@@ -263,24 +263,27 @@ function handleMouseUp() {
     }
   }
 
-  if (valid) {
-    const word = selectionPath.map(c => c.textContent).join("");
-    const reversed = word.split("").reverse().join("");
-    const found = Object.keys(words).find(w => w === word || w === reversed);
+  const word = selectionPath.map(c => c.textContent).join("");
+  const reversed = word.split("").reverse().join("");
+  const found = Object.keys(words).find(w => w === word || w === reversed);
 
-    if (found && !foundWords.includes(found)) {
-      foundWords.push(found);
-      localStorage.setItem("foundWords", JSON.stringify(foundWords));
-      updateWordList(found);
-      selectionPath.forEach(c => c.classList.add("found"));
-      captionsDiv.innerHTML += `<div class="caption">${words[found]}</div>`;
-    }
+  if (valid && found && !foundWords.includes(found)) {
+    foundWords.push(found);
+    localStorage.setItem("foundWords", JSON.stringify(foundWords));
+    updateWordList(found);
+    selectionPath.forEach(c => {
+      c.classList.remove("selected");
+      c.classList.add("found");
+    });
+    captionsDiv.innerHTML += `<div class="caption">${words[found]}</div>`;
+  } else {
+    // Clear selection if word is invalid
+    selectionPath.forEach(c => c.classList.remove("selected"));
   }
 
-  // Always clear selection visuals
-  selectionPath.forEach(c => c.classList.remove("selected"));
   selectionPath = [];
 }
+
 
 
 document.body.onmousedown = () => false;
