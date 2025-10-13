@@ -213,9 +213,10 @@ function handleMouseUp() {
   }
 
   const getCoords = cell => {
-    const index = Array.from(grid.children).indexOf(cell);
-    return [Math.floor(index / gridSize), index % gridSize];
-  };
+  const index = Array.from(grid.querySelectorAll("td")).indexOf(cell);
+  return [Math.floor(index / gridSize), index % gridSize];
+};
+
 
   const [startRow, startCol] = getCoords(selectionPath[0]);
   const [nextRow, nextCol] = getCoords(selectionPath[1]);
