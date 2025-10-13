@@ -105,7 +105,37 @@
   const el = document.getElementById(`word-${word}`);
   if (el) el.classList.add("foundWord");
 }
-   function fillEmptyCells() {
+  function placeWord(word) {
+  const directions = [
+    [0, 1], [1, 0], [1, 1], [-1, 1]
+  ];
+  for (let attempt = 0; attempt < 100; attempt++) {
+    const dir = directions[Math.floor(Math.random() * directions.length)];
+    const row = Math.floor(Math.random() * gridSize);
+    const col = Math.floor(Math.random() * gridSize);
+    let fits = true;
+    for (let i = 0; i < word.length; i++) {
+      const r = row + dir[0] * i;
+      const c = col + dir[1] * i;
+      const index = r * gridSize + c;
+      if (r < 0 || r >= gridSize || c < 0 || c >= gridSize || (puzzle[index] && puzzle[index] !== word[i])) {
+        fits = false;
+        break;
+      }
+    }
+    if (fits) {
+      for (let i = 0; i < word.length; i++) {
+        const r = row + dir[0] * i;
+        const c = col + dir[1] * i;
+        const index = r * gridSize + c;
+        puzzle[index] = word[i];
+      }
+      return;
+    }
+  }
+}
+
+    function fillEmptyCells() {
   for (let i = 0; i < puzzle.length; i++) {
     if (!puzzle[i]) {
       puzzle[i] = String.fromCharCode(65 + Math.floor(Math.random() * 26));
@@ -169,6 +199,7 @@ function handleMouseUp() {
 
 document.body.onmousedown = () => false;
  
+Object.keys(words).forEach(placeWord);
 fillEmptyCells();
 renderGrid();
 renderWordList();
