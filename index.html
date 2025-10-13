@@ -218,10 +218,9 @@ function handleMouseUp() {
   const dirRow = nextRow - startRow;
   const dirCol = nextCol - startCol;
 
-  // Normalize direction
-  const length = Math.max(Math.abs(dirRow), Math.abs(dirCol));
-  const stepRow = dirRow / length;
-  const stepCol = dirCol / length;
+  // Normalize direction to unit steps
+  const stepRow = Math.sign(dirRow);
+  const stepCol = Math.sign(dirCol);
 
   // Validate all cells follow the same direction
   let valid = true;
@@ -249,6 +248,7 @@ function handleMouseUp() {
 
   selectionPath = [];
 }
+
 
 
 document.body.onmousedown = () => false;
