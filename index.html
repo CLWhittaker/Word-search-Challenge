@@ -216,10 +216,13 @@ function handleMouseOver(cell) {
   const col = parseInt(cell.dataset.col);
 
   if (selectionPath.length === 1) {
-    stepRow = row - startRow;
-    stepCol = col - startCol;
-    if (stepRow !== 0) stepRow = Math.sign(stepRow);
-    if (stepCol !== 0) stepCol = Math.sign(stepCol);
+    const lastRow = parseInt(selectionPath[0].dataset.row);
+    const lastCol = parseInt(selectionPath[0].dataset.col);
+    stepRow = Math.sign(row - lastRow);
+    stepCol = Math.sign(col - lastCol);
+
+    // Only allow adjacent cell to set direction
+    if (Math.abs(row - lastRow) > 1 || Math.abs(col - lastCol) > 1) return;
   }
 
   const lastCell = selectionPath[selectionPath.length - 1];
@@ -234,7 +237,6 @@ function handleMouseOver(cell) {
     cell.classList.add("selected");
   }
 }
-
 
 function handleMouseUp() {
   if (selectionPath.length < 2) {
