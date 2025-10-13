@@ -229,9 +229,10 @@ function handleMouseOver(cell) {
   const lastRow = parseInt(lastCell.dataset.row);
   const lastCol = parseInt(lastCell.dataset.col);
 
+  // Enforce strict direction and adjacency
   if (
-    row - lastRow === stepRow &&
-    col - lastCol === stepCol
+    row === lastRow + stepRow &&
+    col === lastCol + stepCol
   ) {
     selectionPath.push(cell);
     cell.classList.add("selected");
