@@ -63,6 +63,9 @@
   <script>
     const gridSize = 22;
     
+    let startRow, startCol;
+    let stepRow = null, stepCol = null;
+
  const words = {
   ACADEME: "Where scrolls are born and pedants duel in dusty silence.",
   ACCUSED: "Marked by whispers, but not yet claimed by truth.",
@@ -199,13 +202,39 @@ function handleMouseDown(cell) {
   isDragging = true;
   selectionPath = [cell];
   cell.classList.add("selected");
+  startRow = parseInt(cell.dataset.row);
+  startCol = parseInt(cell.dataset.col);
+  stepRow = null;
+  stepCol = null;
 }
+
 
 function handleMouseOver(cell) {
   if (!isDragging || selectionPath.includes(cell)) return;
-  selectionPath.push(cell);
-  cell.classList.add("selected");
+
+  const row = parseInt(cell.dataset.row);
+  const col = parseInt(cell.dataset.col);
+
+  if (selectionPath.length === 1) {
+    stepRow = row - startRow;
+    stepCol = col - startCol;
+    if (stepRow !== 0) stepRow = Math.sign(stepRow);
+    if (stepCol !== 0) stepCol = Math.sign(stepCol);
+  }
+
+  const lastCell = selectionPath[selectionPath.length - 1];
+  const lastRow = parseInt(lastCell.dataset.row);
+  const lastCol = parseInt(lastCell.dataset.col);
+
+  if (
+    row - lastRow === stepRow &&
+    col - lastCol === stepCol
+  ) {
+    selectionPath.push(cell);
+    cell.classList.add("selected");
+  }
 }
+
 
 function handleMouseUp() {
   if (selectionPath.length < 2) {
