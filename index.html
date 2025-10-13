@@ -203,28 +203,53 @@ function handleMouseOver(cell) {
 }
 
 function handleMouseUp() {
-  isDragging = false;
-  const word = selectionPath.map(c => c.textContent).join("");
-  if (words[word] && !foundWords.includes(word)) {
-    selectionPath.forEach(c => {
-      c.classList.remove("selected");
-      c.classList.add("found");
-    });
-    foundWords.push(word);
-    localStorage.setItem("foundWords", JSON.stringify(foundWords));
-    const caption = document.createElement("div");
-    caption.className = "caption";
-    caption.textContent = `${word}: ${words[word]}`;
-    captionsDiv.appendChild(caption);
-    updateWordList(word);
-    if (foundWords.length === Object.keys(words).length) {
-      document.getElementById("banner").style.display = "block";
-    }
-  } else {
-    selectionPath.forEach(c => c.classList.remove("selected"));
+  if (selectionPath.length < 2) {
+    selectionPath = [];
+    return;
   }
+
+  const getCoords = cell => {
+    const index = Array.from(grid.children).indexOf(cell);
+    return [Math.floor(index / gridSize), index % gridSize];
+  };
+
+  const [startRow, startCol] = getCoords(selectionPath[0]);
+  const [nextRow, nextCol] = getCoords(selectionPath[1]);
+  const dirRow = nextRow - startRow;
+  const dirCol = nextCol - startCol;
+
+  // Normalize direction
+  const length = Math.max(Math.abs(dirRow), Math.abs(dirCol));
+  const stepRow = dirRow / length;
+  const stepCol = dirCol / length;
+
+  // Validate all cells follow the same direction
+  let valid = true;
+  for (let i = 1; i < selectionPath.length; i++) {
+    const [prevRow, prevCol] = getCoords(selectionPath[i - 1]);
+    const [currRow, currCol] = getCoords(selectionPath[i]);
+    const deltaRow = currRow - prevRow;
+    const deltaCol = currCol - prevCol;
+    if (deltaRow !== stepRow || deltaCol !== stepCol) {
+      valid = false;
+      break;
+    }
+  }
+
+  if (valid) {
+    const word = selectionPath.map(c => c.textContent).join("");
+    const reversed = word.split("").reverse().join("");
+    const found = Object.keys(words).find(w => w === word || w === reversed);
+    if (found && !foundWords.includes(found)) {
+      foundWords.push(found);
+      localStorage.setItem("foundWords", JSON.stringify(foundWords));
+      updateWordList(found);
+    }
+  }
+
   selectionPath = [];
 }
+
 
 document.body.onmousedown = () => false;
  
