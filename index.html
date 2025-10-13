@@ -252,25 +252,20 @@ function handleMouseUp() {
 
   const [startRow, startCol] = getCoords(selectionPath[0]);
   const [nextRow, nextCol] = getCoords(selectionPath[1]);
-  const dirRow = nextRow - startRow;
-  const dirCol = nextCol - startCol;
-
-  // Normalize direction to unit steps
-  const stepRow = Math.sign(dirRow);
-  const stepCol = Math.sign(dirCol);
+  // Direction already set during selection—no need to redefine
 
   // Validate all cells follow the same direction
-  let valid = true;
-  for (let i = 1; i < selectionPath.length; i++) {
-    const [prevRow, prevCol] = getCoords(selectionPath[i - 1]);
-    const [currRow, currCol] = getCoords(selectionPath[i]);
-    const deltaRow = currRow - prevRow;
-    const deltaCol = currCol - prevCol;
-    if (deltaRow !== stepRow || deltaCol !== stepCol) {
-      valid = false;
-      break;
-    }
+ let valid = true;
+for (let i = 1; i < selectionPath.length; i++) {
+  const [prevRow, prevCol] = getCoords(selectionPath[i - 1]);
+  const [currRow, currCol] = getCoords(selectionPath[i]);
+  const deltaRow = currRow - prevRow;
+  const deltaCol = currCol - prevCol;
+  if (deltaRow !== stepRow || deltaCol !== stepCol) {
+    valid = false;
+    break;
   }
+}
 
   if (valid) {
     const word = selectionPath.map(c => c.textContent).join("");
