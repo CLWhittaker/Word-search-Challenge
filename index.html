@@ -241,46 +241,47 @@ function handleMouseOver(cell) {
 
 function handleMouseUp() {
   if (selectionPath.length < 2) {
+    selectionPath.forEach(c => c.classList.remove("selected"));
     selectionPath = [];
     return;
   }
 
-  const getCoords = cell => {
-  const index = Array.from(grid.querySelectorAll("td")).indexOf(cell);
-  return [Math.floor(index / gridSize), index % gridSize];
-};
+  const getCoords = cell => [
+    parseInt(cell.dataset.row),
+    parseInt(cell.dataset.col)
+  ];
 
-
-  const [startRow, startCol] = getCoords(selectionPath[0]);
-  const [nextRow, nextCol] = getCoords(selectionPath[1]);
-  // Direction already set during selection—no need to redefine
-
-  // Validate all cells follow the same direction
- let valid = true;
-for (let i = 1; i < selectionPath.length; i++) {
-  const [prevRow, prevCol] = getCoords(selectionPath[i - 1]);
-  const [currRow, currCol] = getCoords(selectionPath[i]);
-  const deltaRow = currRow - prevRow;
-  const deltaCol = currCol - prevCol;
-  if (deltaRow !== stepRow || deltaCol !== stepCol) {
-    valid = false;
-    break;
+  let valid = true;
+  for (let i = 1; i < selectionPath.length; i++) {
+    const [prevRow, prevCol] = getCoords(selectionPath[i - 1]);
+    const [currRow, currCol] = getCoords(selectionPath[i]);
+    const deltaRow = currRow - prevRow;
+    const deltaCol = currCol - prevCol;
+    if (deltaRow !== stepRow || deltaCol !== stepCol) {
+      valid = false;
+      break;
+    }
   }
-}
 
   if (valid) {
     const word = selectionPath.map(c => c.textContent).join("");
     const reversed = word.split("").reverse().join("");
     const found = Object.keys(words).find(w => w === word || w === reversed);
+
     if (found && !foundWords.includes(found)) {
       foundWords.push(found);
       localStorage.setItem("foundWords", JSON.stringify(foundWords));
       updateWordList(found);
+      selectionPath.forEach(c => c.classList.add("found"));
+      captionsDiv.innerHTML += `<div class="caption">${words[found]}</div>`;
     }
   }
 
+  // Always clear selection visuals
+  selectionPath.forEach(c => c.classList.remove("selected"));
   selectionPath = [];
 }
+
 
 document.body.onmousedown = () => false;
  
