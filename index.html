@@ -177,6 +177,7 @@ foundWords.forEach(updateWordList);   // Restore progress
 }
 
 function renderGrid() {
+  grid.innerHTML = "";
   for (let i = 0; i < gridSize; i++) {
     const tr = document.createElement("tr");
     for (let j = 0; j < gridSize; j++) {
