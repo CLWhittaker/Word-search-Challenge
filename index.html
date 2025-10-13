@@ -107,11 +107,16 @@
 }
   function placeWord(word, maxAttempts = 500) {
   const directions = [
-    [0, 1],   // right
-    [1, 0],   // down
-    [1, 1],   // down-right
-    [-1, 1]   // up-right
-  ];
+  [0, 1],   // right
+  [1, 0],   // down
+  [0, -1],  // left
+  [-1, 0],  // up
+  [1, 1],   // down-right
+  [-1, -1], // up-left
+  [1, -1],  // down-left
+  [-1, 1]   // up-right
+];
+
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     const dir = directions[Math.floor(Math.random() * directions.length)];
     const row = Math.floor(Math.random() * gridSize);
