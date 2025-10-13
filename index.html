@@ -58,6 +58,8 @@
   <div id="wordList"></div>
   <table id="grid"></table>
   <div id="banner">🧦 You’ve earned your ceremonial socks and scrollsmith badge. Onward to the next ritual.</div>
+  <button onclick="resetScroll()">🔄 Reset Scroll</button>
+
   <div id="captions"></div>
 
   <script>
@@ -108,6 +110,11 @@
   const el = document.getElementById(`word-${word}`);
   if (el) el.classList.add("foundWord");
 }
+ function resetScroll() {
+  localStorage.removeItem("foundWords");
+  location.reload();
+}
+   
   function placeWord(word, maxAttempts = 500) {
   const directions = [
   [0, 1],   // right
