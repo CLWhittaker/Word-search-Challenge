@@ -10,17 +10,24 @@
 <head>
   <meta charset="UTF-8" />
   <title>The Scroll of Monumental Mayhem</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
       text-align: center;
       background: #fdf6e3;
       color: #333;
+      touch-action: manipulation;
     }
     #grid {
       margin: 20px auto;
       border-collapse: collapse;
     }
+    #grid td {
+     width: 32px;
+     height: 32px;
+     font-size: 18px;
+     }
     #grid td {
       width: 24px;
       height: 24px;
@@ -199,7 +206,11 @@ function renderGrid() {
       td.addEventListener("mousedown", () => handleMouseDown(td));
       td.addEventListener("mouseover", () => handleMouseOver(td));
       td.addEventListener("mouseup", handleMouseUp);
-      tr.appendChild(td);
+     // 🧠 Add these for mobile touch support
+td.addEventListener("touchstart", () => handleMouseDown(td));
+td.addEventListener("touchmove", () => handleMouseOver(td));
+td.addEventListener("touchend", handleMouseUp);
+ tr.appendChild(td);
     }
     grid.appendChild(tr);
   }
