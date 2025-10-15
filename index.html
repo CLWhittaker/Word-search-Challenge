@@ -301,16 +301,24 @@ function handleMouseOver(cell) {
 
 function handleMouseUp() {
   if (selectionPath.length < 2) {
-    selectionPath.forEach(c => c.classList.remove("selected"));
-    selectionPath = [];
-    return;
+    // Try to infer direction from first two cells if possible
+    const first = selectionPath[0];
+    const second = selectionPath[1];
+    if (first && second) {
+      const r1 = parseInt(first.dataset.row);
+      const c1 = parseInt(first.dataset.col);
+      const r2 = parseInt(second.dataset.row);
+      const c2 = parseInt(second.dataset.col);
+      stepRow = Math.sign(r2 - r1);
+      stepCol = Math.sign(c2 - c1);
+    } else {
+      selectionPath.forEach(c => c.classList.remove("selected"));
+      selectionPath = [];
+      return;
+    }
   }
 
-  const getCoords = cell => [
-    parseInt(cell.dataset.row),
-    parseInt(cell.dataset.col)
-  ];
-
+  const getCoords = cell => [parseInt(cell.dataset.row), parseInt(cell.dataset.col)];
   let valid = true;
   for (let i = 1; i < selectionPath.length; i++) {
     const [prevRow, prevCol] = getCoords(selectionPath[i - 1]);
@@ -324,8 +332,14 @@ function handleMouseUp() {
   }
 
   const word = selectionPath.map(c => c.textContent).join("");
+  console.log("Word traced:", word);
+   console.log("Direction:", stepRow, stepCol);
+   console.log("Selection length:", selectionPath.length);
   const reversed = word.split("").reverse().join("");
+   console.log("Reversed word:", reversed);
+
   const found = Object.keys(words).find(w => w === word || w === reversed);
+   console.log("Found match:", found);
 
   if (valid && found && !foundWords.includes(found)) {
     foundWords.push(found);
@@ -335,14 +349,9 @@ function handleMouseUp() {
       c.classList.remove("selected");
       c.classList.add("found");
     });
-    captionsDiv.innerHTML += `<div class="caption">${words[found]}</div>`;
-   //Reveal the banner only when all words are found 
-    if (foundWords.length === Object.keys(words).length) {
-    document.getElementById("banner").style.display = "block";
-  }
   } else {
-    // Clear selection if word is invalid
-    selectionPath.forEach(c => c.classList.remove("selected"));
+    // Optional: keep selection for debugging
+    // selectionPath.forEach(c => c.classList.remove("selected"));
   }
 
   selectionPath = [];
