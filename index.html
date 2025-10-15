@@ -31,8 +31,8 @@
   font-size: 18px;
   cursor: pointer;
   touch-action: manipulation;
-  pointer-events: auto
-}
+  pointer-events: auto;
+  }
     .selected {
       background-color: #cce5ff;
     }
@@ -44,6 +44,17 @@
       text-decoration: line-through;
       color: #999;
     }
+    #gridWrapper {
+  overflow-x: auto;
+  max-width: 100vw;
+  touch-action: auto;
+}
+
+#grid {
+  display: block;
+  width: max-content;
+}
+
     #banner {
       display: none;
       margin-top: 20px;
@@ -60,7 +71,10 @@
   <h1>The Scroll of Monumental Mayhem</h1>
   <p>Click and drag to trace a word. Progress is saved.</p>
   <div id="wordList"></div>
+   <div id="gridWrapper">
   <table id="grid"></table>
+</div>
+
 <div id="banner" style="display: none;">
   🧦 You’ve earned your ceremonial socks and scrollsmith badge. Onward to the next ritual.
 </div>
