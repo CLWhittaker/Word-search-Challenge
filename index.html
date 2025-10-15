@@ -199,13 +199,26 @@ function renderGrid() {
       td.textContent = puzzle[index];
       td.dataset.row = i;
       td.dataset.col = j;
-      td.addEventListener("mousedown", () => handleMouseDown(td));
-      td.addEventListener("mouseover", () => handleMouseOver(td));
-      td.addEventListener("mouseup", handleMouseUp);
-     // 🧠 Add these for mobile touch support
-td.addEventListener("touchstart", () => handleMouseDown(td));
-td.addEventListener("touchmove", () => handleMouseOver(td));
-td.addEventListener("touchend", handleMouseUp);
+     td.addEventListener("mousedown", () => handleMouseDown(td));
+td.addEventListener("mouseover", () => handleMouseOver(td));
+td.addEventListener("mouseup", handleMouseUp);
+
+// 🧠 Add these for mobile touch support
+td.addEventListener("touchstart", (e) => {
+  e.preventDefault();
+  handleMouseDown(td);
+}, { passive: false });
+
+td.addEventListener("touchmove", (e) => {
+  e.preventDefault();
+  handleMouseOver(td);
+}, { passive: false });
+
+td.addEventListener("touchend", (e) => {
+  e.preventDefault();
+  handleMouseUp();
+}, { passive: false });
+
  tr.appendChild(td);
     }
     grid.appendChild(tr);
