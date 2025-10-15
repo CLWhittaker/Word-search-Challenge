@@ -117,6 +117,7 @@
 }
  function resetScroll() {
   localStorage.removeItem("foundWords");
+   document.getElementById("banner").style.display = "none";
   location.reload();
 }
    
@@ -305,6 +306,10 @@ function handleMouseUp() {
       c.classList.add("found");
     });
     captionsDiv.innerHTML += `<div class="caption">${words[found]}</div>`;
+   //Reveal the banner only when all words are found 
+    if (foundWords.length === Object.keys(words).length) {
+    document.getElementById("banner").style.display = "block";
+  }
   } else {
     // Clear selection if word is invalid
     selectionPath.forEach(c => c.classList.remove("selected"));
