@@ -24,7 +24,11 @@
       border-collapse: collapse;
     }
 @media (max-width:600px){
-   #grid td {
+   #gridWrapper {
+    transform: scale(0.9);
+    transform-origin: top center;
+}
+  #grid td {
   width: 20px;
   height: 20px;
   border: none;
@@ -233,8 +237,13 @@ td.addEventListener("touchstart", (e) => {
 
 td.addEventListener("touchmove", (e) => {
   e.preventDefault();
-  handleMouseOver(td);
+  const touch = e.touches[0];
+  const target = document.elementFromPoint(touch.clientX, touch.clientY);
+  if (target && target.tagName === "TD") {
+    handleMouseOver(target);
+  }
 }, { passive: false });
+
 
 td.addEventListener("touchend", (e) => {
   e.preventDefault();
