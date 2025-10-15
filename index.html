@@ -23,14 +23,15 @@
       margin: 20px auto;
       border-collapse: collapse;
     }
-    #grid td {
-     #grid td {
+   #grid td {
   width: 32px;
   height: 32px;
   border: 1px solid #ccc;
   text-align: center;
   font-size: 18px;
   cursor: pointer;
+  touch-action: manipulation;
+  pointer-events: auto
 }
     .selected {
       background-color: #cce5ff;
@@ -191,7 +192,6 @@ foundWords.forEach(updateWordList);   // Restore progress
     }
   }
 }
-
 function renderGrid() {
   grid.innerHTML = "";
   for (let i = 0; i < gridSize; i++) {
@@ -229,6 +229,8 @@ td.addEventListener("touchend", (e) => {
 }
 
 function handleMouseDown(cell) {
+  console.log("Touch activated:", cell.textContent);
+  console.log("isDragging set to true");
   isDragging = true;
   selectionPath = [cell];
   cell.classList.add("selected");
