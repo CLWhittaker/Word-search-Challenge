@@ -1,10 +1,3 @@
-<!-- This is a shortened preview. The full code includes:
-- Directional tracing logic (start and end click)
-- Word validation across 8 directions
-- Local storage to save found words
-- Lore captions and final banner reveal
--->
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -18,6 +11,8 @@
       background: #fdf6e3;
       color: #333;
       touch-action: manipulation;
+      -webkit-user-select: none;
+      user-select: none;
     }
     #grid {
       margin: 20px auto;
@@ -25,8 +20,8 @@
     }
 @media (max-width:600px){
    #gridWrapper {
-    transform: scale(0.9);
-    transform-origin: top center;
+    /* Removed transform-based scaling (causes coordinate mismatches on touch) */
+    width: 100%;
 }
   #grid td {
   width: 20px;
@@ -61,6 +56,14 @@
 #grid {
   display: block;
   width: max-content;
+  /* pointer interactions handled with Pointer Events; allow touch handling on grid */
+  touch-action: none;
+}
+
+#grid td {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
 }
 
     #banner {
@@ -77,7 +80,7 @@
 </head>
 <body>
   <h1>The Scroll of Monumental Mayhem</h1>
-  <p>Click and drag to trace a word. Progress is saved.</p>
+  <p>Click or touch and drag to trace a word. Progress is saved.</p>
   <div id="wordList"></div>
    <div id="gridWrapper">
   <table id="grid"></table>
@@ -225,40 +228,45 @@ function renderGrid() {
       td.textContent = puzzle[index];
       td.dataset.row = i;
       td.dataset.col = j;
-     td.addEventListener("mousedown", () => handleMouseDown(td));
-td.addEventListener("mouseover", () => handleMouseOver(td));
-td.addEventListener("mouseup", handleMouseUp);
-
-// 🧠 Add these for mobile touch support
-td.addEventListener("touchstart", (e) => {
-  e.preventDefault();
-  handleMouseDown(td);
-}, { passive: false });
-
-td.addEventListener("touchmove", (e) => {
-  e.preventDefault();
-  const touch = e.touches[0];
-  const target = document.elementFromPoint(touch.clientX, touch.clientY);
-  if (target && target.tagName === "TD") {
-    handleMouseOver(target);
-  }
-}, { passive: false });
-
-
-td.addEventListener("touchend", (e) => {
-  e.preventDefault();
-  handleMouseUp();
-}, { passive: false });
-
- tr.appendChild(td);
+      tr.appendChild(td);
     }
     grid.appendChild(tr);
   }
 }
 
+// Use Pointer Events to unify mouse/touch and avoid touch-specific bugs.
+// This replaces per-cell touch handlers and is more reliable across devices.
+
+grid.addEventListener('pointerdown', function(e) {
+  const cell = e.target.closest('td');
+  if (!cell) return;
+  // Prevent default so the browser doesn't start a text-selection gesture.
+  e.preventDefault();
+  if (typeof cell.setPointerCapture === 'function') {
+    try { cell.setPointerCapture(e.pointerId); } catch (err) { /*ignore*/ }
+  }
+  handleMouseDown(cell);
+});
+
+grid.addEventListener('pointermove', function(e) {
+  const cell = e.target.closest('td');
+  if (!cell) return;
+  handleMouseOver(cell);
+});
+
+grid.addEventListener('pointerup', function(e) {
+  const cell = e.target.closest('td');
+  if (cell && typeof cell.releasePointerCapture === 'function') {
+    try { cell.releasePointerCapture(e.pointerId); } catch (err) { }
+  }
+  handleMouseUp();
+});
+
+grid.addEventListener('pointercancel', function(e) {
+  handleMouseUp();
+});
+
 function handleMouseDown(cell) {
-  console.log("Touch activated:", cell.textContent);
-  console.log("isDragging set to true");
   isDragging = true;
   selectionPath = [cell];
   cell.classList.add("selected");
@@ -267,7 +275,6 @@ function handleMouseDown(cell) {
   stepRow = null;
   stepCol = null;
 }
-
 
 function handleMouseOver(cell) {
   if (!isDragging || selectionPath.includes(cell)) return;
@@ -300,22 +307,13 @@ function handleMouseOver(cell) {
 }
 
 function handleMouseUp() {
+  if (!isDragging) return;
+  isDragging = false;
+
   if (selectionPath.length < 2) {
-    // Try to infer direction from first two cells if possible
-    const first = selectionPath[0];
-    const second = selectionPath[1];
-    if (first && second) {
-      const r1 = parseInt(first.dataset.row);
-      const c1 = parseInt(first.dataset.col);
-      const r2 = parseInt(second.dataset.row);
-      const c2 = parseInt(second.dataset.col);
-      stepRow = Math.sign(r2 - r1);
-      stepCol = Math.sign(c2 - c1);
-    } else {
-      selectionPath.forEach(c => c.classList.remove("selected"));
-      selectionPath = [];
-      return;
-    }
+    selectionPath.forEach(c => c.classList.remove("selected"));
+    selectionPath = [];
+    return;
   }
 
   const getCoords = cell => [parseInt(cell.dataset.row), parseInt(cell.dataset.col)];
@@ -332,14 +330,8 @@ function handleMouseUp() {
   }
 
   const word = selectionPath.map(c => c.textContent).join("");
-  console.log("Word traced:", word);
-   console.log("Direction:", stepRow, stepCol);
-   console.log("Selection length:", selectionPath.length);
   const reversed = word.split("").reverse().join("");
-   console.log("Reversed word:", reversed);
-
   const found = Object.keys(words).find(w => w === word || w === reversed);
-   console.log("Found match:", found);
 
   if (valid && found && !foundWords.includes(found)) {
     foundWords.push(found);
@@ -350,19 +342,12 @@ function handleMouseUp() {
       c.classList.add("found");
     });
   } else {
-    // Optional: keep selection for debugging
-    // selectionPath.forEach(c => c.classList.remove("selected"));
+    selectionPath.forEach(c => c.classList.remove("selected"));
   }
 
   selectionPath = [];
 }
 
-
-
-//document.body.onmousedown = () => false;
- 
-
-      </script>
+  </script>
 </body>
 </html>
-
