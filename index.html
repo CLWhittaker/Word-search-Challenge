@@ -1,13 +1,14 @@
-```html name=index.html url=https://github.com/CLWhittaker/Word-search-Challenge/blob/dcee5f0d834d72746006649069f2e76bb828122d/index.html
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="utf-8" />
   <title>The Scroll of Monumental Mayhem</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <style>
+    :root{ --cell-size: 36px; --cell-gap: 2px; }
+    html,body{height:100%}
     body {
-      font-family: 'Segoe UI', sans-serif;
+      font-family: 'Segoe UI', Roboto, system-ui, -apple-system, sans-serif;
       text-align: center;
       background: #fdf6e3;
       color: #333;
@@ -15,6 +16,7 @@
       user-select: none;
       margin: 0;
       padding: 1rem;
+      box-sizing: border-box;
     }
 
     #gridWrapper {
@@ -23,26 +25,22 @@
       margin: 0 auto 1rem;
       -webkit-overflow-scrolling: touch;
       touch-action: pan-y;
+      border-radius: 8px;
+      padding: 6px;
+      background: transparent;
     }
 
-    /* Ensure the table has no borders or spacing */
+    /* Keep using table layout for semantic grid; will size cells via inline style */
     #grid {
-      display: block;
-      width: max-content;
+      display: inline-table;
       border-collapse: collapse;
       border-spacing: 0;
       margin: 0 auto;
       touch-action: none;
       background: transparent;
+      user-select: none;
     }
 
-    /* Remove any visible separators on table, rows, and cells */
-    #grid, #grid tr, #grid td {
-      border: none !important;
-      box-shadow: none !important;
-    }
-
-    /* HIDE GRID LINES: removed border on table cells so the board appears without lines */
     #grid td {
       background: #fff;
       text-align: center;
@@ -54,79 +52,347 @@
       cursor: pointer;
       padding: 0;
       outline: none;
+      border-radius: 4px;
+      transition: background-color 120ms, transform 80ms;
+      font-weight: 600;
+      font-size: 0.9rem;
+      width: var(--cell-size);
+      height: var(--cell-size);
+      line-height: var(--cell-size);
+      margin: var(--cell-gap);
+      display: table-cell;
     }
 
-    .selected { background-color: #cce5ff; }
-    .found { background-color: #b2f2bb; font-weight: bold; }
-    .foundWord { text-decoration: line-through; color: #999; }
+    .selected { background-color: #cce5ff; transform: scale(1.02); }
+    .found { background-color: #b2f2bb; font-weight: bold; color: #064e12; }
+    .foundWord { text-decoration: line-through; color: #999; display: inline-block; margin:0.15rem 0.4rem; }
 
     h1 { font-size: 1.25rem; margin: 0.5rem 0; }
     p { margin: 0.25rem 0 0.75rem; }
     button { padding: 0.5rem 0.75rem; font-size: 1rem; border-radius: 6px; }
 
-    @media (max-width: 420px) { h1 { font-size: 1rem; } }
+    #wordList { margin-bottom: 0.5rem; }
+    #banner { margin: 0.75rem 0; padding: 0.5rem; background: #fff8dc; border-radius: 6px; display:none; }
+
+    @media (max-width: 420px) {
+      h1 { font-size: 1rem; }
+      :root{ --cell-size: 30px; }
+      #grid td { font-size: 0.8rem; }
+    }
   </style>
 </head>
 <body>
   <h1>The Scroll of Monumental Mayhem</h1>
   <p>Tap and drag to trace a word. Progress is saved.</p>
 
-  <div id="wordList"></div>
+  <div id="wordList" aria-live="polite"></div>
 
   <div id="gridWrapper" aria-label="Word search grid wrapper">
     <table id="grid" role="grid" aria-label="Word search grid"></table>
   </div>
 
-  <div id="banner" style="display: none;">🧦 You’ve earned your ceremonial socks and scrollsmith badge. Onward to the next ritual.</div>
-  <button onclick="resetScroll()">🔄 Reset Scroll</button>
-  <div id="captions"></div>
+  <div id="banner">🧦 You’ve earned your ceremonial socks and scrollsmith badge. Onward to the next ritual.</div>
+  <button id="resetBtn">🔄 Reset Scroll</button>
+  <div id="captions" style="margin-top:0.5rem;color:#666;font-size:0.9rem"></div>
 
   <script>
+    // CONFIG
     const gridSize = 22;
-    const words = { ACADEME: "Where scrolls are born and pedants duel in dusty silence.", ACCUSED: "Marked by whispers, but not yet claimed by truth.", AMAZEMENT: "The gasp that follows a moonbeam's sudden arrival.", AMETHYST: "A gem that remembers the midnight of a comet.", ANNELIDA: "A ringed traveler that burrows through loamy histories.", APOPTOSIS: "A dignified bow of cells at the end of a journey.", ARACHNOPHOBIA: "A quiver that lives in the corners of vaulted rooms.", ARCTUROS: "A starry lord with tales of orchards and ice.", AUDACITY: "The small drumbeat before an impossible step.", BARKENTINE: "A ship with a beard of sails and a grin of gulls.", BELEAGUER: "To be encircled by small, persistent inconveniences.", BILLETDOUX: "A folded secret that smells faintly of lavender.", BIOLUMINESCENT: "Glow that prefers midnight audiences.", BLUNDERBUSS: "An orchestra of brass with no conductor.", BOMBASTIC: "Words that prefer capes and loud entrances.", BRAILLING: "The quiet language of raised, patient maps.", BROBDINGNAG: "A land where teacups are the size of ponds.", CACOPHONY: "A jubilant collision of too many instruments.", CADENCE: "The step that tells a story in rhythm.", CALAMITY: "A theatrical disagreement between fate and furniture.", CAMARADERIE: "The warm exchange of well-worn jokes.", CANTILLATE: "To sing homework in a voice of velvet.", CAPERBERRY: "A fruit with a taste for secret maps.", CATHARSIS: "A small flood that washes dust from old poetry.", CELERIPED: "A tiny wheel that insists on races.", CHANTECLERE: "A rooster with the bearing of a lost duke.", CHARIOT: "A memory of wheels and wind-torn flags.", CHIRRUP: "A greeting in six confident notes.", CIRCUMSCRIBE: "To draw a polite boundary around the stars.", CLIFFHANGER: "An ending that likes to hold its breath.", COGNOSCENTI: "Those who carry libraries in their pockets.", COLLATERAL: "Friendly damage left in the wake of great endeavors.", COMPACT: "A tiny book that holds a town's worth of secrets.", COMPUNCTIOUS: "Regret wrapped in careful handwriting.", CONFLAGRATION: "A banquet fire with overly generous flames.", CONGLOMERATE: "Many small voices pooling into a single chorus.", CONNOISSEUR: "A person who keeps a museum of small pleasures.", CONSTELLATION: "An arrangement of wishes with very steady pins.", CONTRIVANCE: "A clever trick that apologizes later.", CONUNDRUM: "A riddle that enjoys being slightly mean.", CORIOLIS: "The invisible wink that sends weather sideways.", CORNUCOPIA: "A horn full of polite abundance.", CORYMB: "A bouquet that imitates tiny suns.", COSIGNATORY: "A hopeful hand on a borrowed note.", CRANIOLOGY: "The study of skulls and polite ghosts.", CRESCENDO: "A ladder that leads the orchestra upward.", CURIOSITY: "A cat-shaped query that always returns with stories.", DALLIANCE: "A brief flirtation with the shape of possibility.", DAREDEVILRY: "A tightrope of bright intentions.", DEBONAIR: "Charm that smells faintly of mischief.", DECAMP: "To leave a party with a hat and a plan.", DECIPHER: "To unlace an old postcard and read the inside.", DECLAIM: "To speak as though the room were a courtroom of admirers.", DEFERMENT: "Tomorrow's polite promise to itself.", DELETERIOUS: "A small kindness with terrible timing.", DELPHIC: "An answer that thinks in riddles.", DEMAGOGUE: "A loud storyteller with suspicious confetti.", DEMURRAGE: "Late fees levied by time itself.", DENOUEMENT: "A bow taken at the end of a complicated play.", "DE rigueur": "An item required for proper ceremony.", DESIDERATUM: "A quietly requested thing that would change everything.", DESICCATE: "To remove the humidity from a very dramatic tale.", DESIST: "To stop, with theatrical modesty.", DESPONDENT: "A chair that has given up on dancing.", DIACRITIC: "A tiny hat for very important letters.", DIFFIDENT: "A whisper that wears sleeves too long.", DILETTANTE: "A person sampling art as if it were pastry.", DILIGENCE: "Slow footsteps that finish entire symphonies.", DIOCESAN: "A town organized around kind explanations.", DISSIPATE: "To let fog remember where it was born.", DIVERGENT: "Roads that meet only for tea.", DIVINITY: "A very old, soft book with a loud inside.", DOLDRUMS: "A hammock for boats feeling thoughtful.", DYNAMO: "A small engine with disproportionate optimism.", EARTHWORM: "A subterranean letter carrier.", ECCENTRICITY: "Behavior that prefers bright hats and odd timing.", ECSTATIC: "Joy that arrives as if on stilts.", ECLAIR: "A pastry pretending it was always a poem.", EFFERVESCENT: "Bubbles that practice being charming.", EFFLORESCENCE: "A garden that learned calligraphy.", EFFRONTERY: "Boldness that borrows a stranger's umbrella.", EFTSOONS: "Things that happen faster than stories.", ELEGIAC: "The music that sits well with old letters.", ELOQUENCE: "Words folded into neat, persuasive cranes.", EMANATE: "To leak a little light into the room.", EMBELLISH: "To add sequins to a true story.", EMEND: "To correct gently and with flourish.", EMISSARY: "A person sent with good cookies and instructions.", EMOLLIENT: "A balm for stubbornly rough chapters.", EMULATE: "To admire by copying with love.", ENNUI: "A polite boredom that still makes good tea.", ENTRAILS: "The interior map of a creature's stories.", EPHEMERAL: "A bouquet that never promises to stay.", EPISTOLARY: "Letters that hold long dinners with each other.", EQUIVOCAL: "Answers that love to dance sideways.", EQUITY: "A fair division of spoils and pie.", ESCARPMENT: "A very polite cliff-face.", ESKER: "A river's old apology left in sand.", EULOGY: "A speech that brings the flowers forward.", EVANESCENT: "A curtain pulled by the breeze.", EXCULPATE: "To remove a stain from someone else's hat.", EXIGENT: "Urgent in the way of an impatient violin.", EXONERATE: "Freeing with a flourish and a ribbon.", EXPATIATE: "To talk at great length and with kindness.", EXPIATE: "To fix a mistake using very fine stitching.", EXTRAPOLATE: "To guess where the missing breadcrumbs lead.", FABRICATE: "To make with gumption and leftover ribbon.", FACETIOUS: "Jokes that wear party hats to conferences.", FACSIMILE: "A faithful photocopy that sings softly.", FALLOUT: "The confetti left after dramatic choices.", FAMISHED: "An appetite that writes sonnets to food.", FARCICAL: "A misadventure performed in three awkward acts.", FATHOM: "To measure the depth of a feeling in spoons.", FISSION: "The loud split of a very opinionated atom.", FITFUL: "Sporadic bursts of inspired clumsiness.", FLAMBOYANT: "A coat with confidence stitched into it.", FLECK: "A small bright point that starts rumors.", FLICKER: "A tiny applause of light.", FLOURISH: "A ribboned punctuation at the end of sentences.", FLUMMOX: "To be delightfully confused by a particularly good riddle.", FOIBLE: "A charmingly odd habit that makes tea better.", FOMENT: "To stir gently with a wooden spoon.", FONTANELLE: "A soft spot that remembers lullabies.", FORAGE: "To look for lost sentences in the underbrush.", FORBEARANCE: "Patience packaged in neat handwriting.", FOREBODE: "A quiet warning that clears its throat.", FORESTALL: "To meet troubles with an umbrella and a plan.", FORTITUDE: "Courage measured in gentle, steady breaths.", FRACTIOUS: "Pets that organize protests over blankets.", FRANKINCENSE: "An incense that smells faintly of library books.", FRAY: "Edges that tell very old stories.", FRENZY: "A small, energetic parade of ideas.", FROWARD: "Stubborn in the fashion of ancient goats.", FULCRUM: "A point that prefers to shift opinion subtly.", FUMIGATE: "To cleanse with very ceremonious smoke.", FUNAMBULIST: "A rope-walking gentleman with polite balance.", FURTIVE: "Sneaky in the way one hides extra biscuits.", GALVANIZE: "To inspire with a small thunderclap of encouragement.", GALLANT: "Bravery that always holds a hat for the lady of the room.", GARGANTUAN: "Too large for umbrellas and good manners.", GARRULOUS: "A friend who loves to fill silences with stories.", GAUDY: "Decoration with unapologetic cheer.", GAUZE: "Cloth thinking itself useful and slightly heroic.", GAZETTE: "A paper that likes to wear important headlines.", GESTICULATE: "To wave one's thoughts into better shape.", GIMLET: "A tool with the expression of a private detective.", GLOWWORM: "A small, patient lantern for midnight paths.", GOBBLEDYGOOK: "Words that tangle themselves into confetti.", GOSSAMER: "Fabric that prefers moonlight for its wardrobe.", GRANDEUR: "A polite insistence on high ceilings and big windows.", GRAVITATE: "To slowly lean toward the best cup of tea.", GREGARIOUS: "Social in a way that invites both cookies and debate.", GROTESQUE: "Art that enjoys surprising polite audiences.", GUARDIAN: "A hand on the doorknob when storms visit.", GUILELESS: "Trusting with the sweet danger of a child.", GULLIBLE: "Believing in the good story with honest enthusiasm.", HABENULA: "A small hook for hanging stray metaphors.", HAGIOGRAPHY: "Praise written in gold ink for saints and small dogs.", HAPLESS: "Fortune's clumsy understudy.", HARBINGER: "A messenger who arrives with teacups of tidings.", HARMONIC: "A note that fits a choir like a well-made glove.", HARBINGER: "A messenger who arrives with teacups of tidings.", HAZY: "A memory that prefers soft-focus lenses.", HEADLONG: "To leap with both feet and a sensible grin.", HEARTH: "The room where stories come to talk to one another.", HEDGEHOG: "A small creature that knits sweaters out of starlight."
-    
-    const puzzle = Array(gridSize * gridSize).fill(null);
-    const grid = document.getElementById("grid");
-    const gridWrapper = document.getElementById("gridWrapper");
-    const wordListDiv = document.getElementById("wordList");
-    let foundWords = JSON.parse(localStorage.getItem("foundWords")) || [];
-    let isDragging = false; let selectionPath = []; let stepRow = null, stepCol = null;
+    // 20 words with sentence shown when found
+    const words = {
+      ACADEME: "Where scrolls are born and pedants duel in dusty silence.",
+      ACCUSED: "Marked by whispers, but not yet claimed by truth.",
+      AMAZEMENT: "The gasp that follows a moonbeam's surprise.",
+      SCRIPT: "A line of runes that binds a thought.",
+      MAVERICK: "One who wanders off the expected map.",
+      RITUAL: "Small repeated acts make a rite of the mundane.",
+      SCRIPTORIUM: "A quiet room where ink drinks stories.",
+      RUNES: "Ancient marks that hum with meaning.",
+      LORE: "A map of memory passed by lantern-light.",
+      CITADEL: "Stone shoulders that keep a city's secrets.",
+      VIGIL: "A watch kept for promises and stars.",
+      SERPENT: "A winding shadow between the roots.",
+      CONSTELLATION: "Patterns of intent stitched across night.",
+      ODYSSEY: "A long trail of small discoveries.",
+      QUILL: "A feather that leaves a permanent trail.",
+      EMBER: "Heat that remembers the fire's name.",
+      PHOENIX: "A promise that endings are unfinished beginnings.",
+      ENCYCLOPEDIA: "A tower of answers built from other people's searches.",
+      HARBINGER: "The quiet herald of change's first knock.",
+      ARCANUM: "A single secret wrapped in careful language."
+    };
 
-    function renderWordList() { wordListDiv.innerHTML = "<strong>Words to Find:</strong><br>" + Object.keys(words).map(word => `<span id=\"word-${word}\" class=\"${foundWords.includes(word) ? 'foundWord' : ''}\">${word}</span>`).join(" "); }
-    function updateWordList(word) { const el = document.getElementById(`word-${word}`); if (el) el.classList.add("foundWord"); }
-    function resetScroll() { localStorage.removeItem("foundWords"); document.getElementById("banner").style.display = "none"; location.reload(); }
-
-    function placeWord(word, maxAttempts = 500) { const directions = [[0,1],[1,0],[0,-1],[-1,0],[1,1],[-1,-1],[1,-1],[-1,1]]; for (let attempt=0; attempt<maxAttempts; attempt++) { const dir = directions[Math.floor(Math.random()*directions.length)]; const r = Math.floor(Math.random()*gridSize); const c = Math.floor(Math.random()*gridSize); const dr = dir[0], dc = dir[1]; const endR = r + dr*(word.length-1); const endC = c + dc*(word.length-1); if (endR<0||endR>=gridSize||endC<0||endC>=gridSize) continue; let fits = true; const positions = []; for (let i=0;i<word.length;i++){ const rr = r + dr*i; const cc = c + dc*i; const idx = rr*gridSize + cc; const existing = puzzle[idx]; if (existing && existing !== word[i]){ fits=false; break; } positions.push(idx); } if (!fits) continue; for (let i=0;i<word.length;i++) puzzle[positions[i]] = word[i]; return {word, positions}; } return null; }
-
+    // State
+    const puzzle = new Array(gridSize * gridSize).fill(null);
     const placements = {};
-    const unplaced = [];
-    Object.keys(words).forEach(word => { if (!placeWord(word)) { unplaced.push(word); console.warn(`⚠️ Failed to place: ${word}`); } });
-    unplaced.forEach(word => { if (!placeWord(word, 1000)) console.error(`❌ Still failed to place: ${word}`); });
+    const foundWords = new Set(JSON.parse(localStorage.getItem("foundWords") || "[]"));
+    const grid = document.getElementById('grid');
+    const gridWrapper = document.getElementById('gridWrapper');
+    const wordListDiv = document.getElementById('wordList');
+    const banner = document.getElementById('banner');
+    const captions = document.getElementById('captions');
 
-    function fillEmptyCells() { for (let i=0;i<puzzle.length;i++){ if (!puzzle[i]) puzzle[i]=String.fromCharCode(65+Math.floor(Math.random()*26)); } }
+    // Utility
+    function idx(row, col){ return row * gridSize + col; }
+    function rc(index){ return [Math.floor(index / gridSize), index % gridSize]; }
+    function randInt(n){ return Math.floor(Math.random() * n); }
 
-    function renderGrid() { grid.innerHTML = ""; for (let i=0;i<gridSize;i++){ const tr=document.createElement('tr'); for (let j=0;j<gridSize;j++){ const td=document.createElement('td'); td.textContent = puzzle[i*gridSize + j]; td.dataset.row = i; td.dataset.col = j; tr.appendChild(td); } grid.appendChild(tr); } // mark found words
-      foundWords.forEach(w => { const pos = placements[w]; if (pos) pos.forEach(idx => { const r = Math.floor(idx/gridSize); const c = idx%gridSize; const td = grid.querySelector(`td[data-row="${r}"][data-col="${c}"]`); if (td) td.classList.add('found'); }); updateWordList(w); });
+    // Place words into puzzle
+    function placeWord(word, maxAttempts = 1000) {
+      const dirs = [[0,1],[1,0],[0,-1],[-1,0],[1,1],[-1,-1],[1,-1],[-1,1]];
+      const L = word.length;
+      for (let attempt=0; attempt<maxAttempts; attempt++){
+        const dir = dirs[randInt(dirs.length)];
+        const dr=dir[0], dc=dir[1];
+        let r = randInt(gridSize);
+        let c = randInt(gridSize);
+
+        const endR = r + dr*(L-1);
+        const endC = c + dc*(L-1);
+        if (endR < 0 || endR >= gridSize || endC < 0 || endC >= gridSize) continue;
+
+        // check collisions
+        let path = [];
+        let ok = true;
+        for (let k=0;k<L;k++){
+          const rr = r + dr*k, cc = c + dc*k;
+          const i = idx(rr,cc);
+          const ch = puzzle[i];
+          if (ch && ch !== word[k]) { ok = false; break; }
+          path.push(i);
+        }
+        if (!ok) continue;
+
+        // place
+        for (let k=0;k<L;k++){
+          puzzle[path[k]] = word[k];
+        }
+        placements[word] = path;
+        return true;
+      }
+      return false;
     }
 
-    function recomputeGridSize(){ if(!grid||!gridWrapper) return; const padding=12; const availableWidth=Math.max(160, Math.min(window.innerWidth - padding, gridWrapper.clientWidth || window.innerWidth)); const cellSize = Math.max(20, Math.floor(availableWidth / Math.min(gridSize, Math.floor(availableWidth/24)))); Array.from(grid.querySelectorAll('td')).forEach(td => { td.style.width = td.style.height = cellSize + 'px'; td.style.fontSize = Math.max(12, Math.floor(cellSize * 0.55)) + 'px'; }); }
+    function fillEmptyCells(){
+      for (let i=0;i<puzzle.length;i++){
+        if (!puzzle[i]) puzzle[i] = String.fromCharCode(65 + randInt(26));
+      }
+    }
 
-    function debounce(fn,wait){ let t; return function(){ clearTimeout(t); t=setTimeout(()=>fn.apply(this,arguments),wait); }; }
+    // Render word list
+    function renderWordList(){
+      const keys = Object.keys(words);
+      wordListDiv.innerHTML = '<strong>Words to Find:</strong><br>';
+      keys.forEach(w => {
+        const span = document.createElement('span');
+        span.id = `word-${w}`;
+        span.textContent = w;
+        if (foundWords.has(w)) span.classList.add('foundWord');
+        span.title = words[w] || '';
+        wordListDiv.appendChild(span);
+        wordListDiv.appendChild(document.createTextNode(' '));
+      });
+    }
 
-    grid.addEventListener('pointerdown', function(e){ const cell = e.target.closest('td'); if(!cell) return; e.preventDefault(); gridWrapper.style.overflow='hidden'; if (typeof cell.setPointerCapture === 'function') try { cell.setPointerCapture(e.pointerId); } catch (err) {} handleMouseDown(cell); });
-    grid.addEventListener('pointermove', function(e){ if(!isDragging) return; const el = document.elementFromPoint(e.clientX, e.clientY); const cell = el && typeof el.closest === 'function' ? el.closest('td') : e.target.closest('td'); if(!cell) return; handleMouseOver(cell); });
-    grid.addEventListener('pointerup', function(e){ gridWrapper.style.overflow=''; handleMouseUp(); });
-    grid.addEventListener('pointercancel', function(e){ gridWrapper.style.overflow=''; handleMouseUp(); });
+    // Build grid DOM
+    function renderGrid(){
+      grid.innerHTML = '';
+      for (let r=0;r<gridSize;r++){
+        const tr = document.createElement('tr');
+        for (let c=0;c<gridSize;c++){
+          const td = document.createElement('td');
+          td.setAttribute('role','gridcell');
+          td.dataset.row = r;
+          td.dataset.col = c;
+          td.dataset.index = idx(r,c);
+          td.textContent = puzzle[idx(r,c)];
+          if (isCellInFound(idx(r,c))) td.classList.add('found');
+          tr.appendChild(td);
+        }
+        grid.appendChild(tr);
+      }
+    }
 
-    function handleMouseDown(cell){ isDragging=true; selectionPath=[cell]; cell.classList.add('selected'); stepRow=null; stepCol=null; }
-    function handleMouseOver(cell){ if(!isDragging||selectionPath.includes(cell)) return; const row=parseInt(cell.dataset.row,10); const col=parseInt(cell.dataset.col,10); if(selectionPath.length===1){ const first=selectionPath[0]; const r0=parseInt(first.dataset.row,10); const c0=parseInt(first.dataset.col,10); const dRow=row-r0; const dCol=col-c0; const g=Math.max(1,Math.abs(gcd2(dRow,dCol))); const dr=dRow/g; const dc=dCol/g; if(Math.abs(dr)>1||Math.abs(dc)>1) return; stepRow=dr; stepCol=dc; } else { const last=selectionPath[selectionPath.length-1]; const lr=parseInt(last.dataset.row,10); const lc=parseInt(last.dataset.col,10); if(row!==lr+stepRow||col!==lc+stepCol) return; } selectionPath.push(cell); cell.classList.add('selected'); }
+    function isCellInFound(i){
+      for (const w of foundWords){
+        const path = placements[w];
+        if (!path) continue;
+        if (path.indexOf(i) !== -1) return true;
+      }
+      return false;
+    }
 
-    function gcd2(a,b){ a=Math.abs(a); b=Math.abs(b); if(!a) return b; if(!b) return a; while(b){ const t=a%b; a=b; b=t; } return a; }
+    // Responsive sizing
+    function recomputeGridSize(){
+      const padding = 24;
+      const available = Math.max(120, Math.min(window.innerWidth - padding, gridWrapper.clientWidth || window.innerWidth - padding));
+      const cell = Math.floor(available / Math.min(gridSize, 12));
+      const size = Math.max(22, Math.min(52, cell));
+      document.documentElement.style.setProperty('--cell-size', size + 'px');
+    }
 
-    function handleMouseUp(){ if(!isDragging) return; isDragging=false; if(selectionPath.length<2){ selectionPath.forEach(c=>c.classList.remove('selected')); selectionPath=[]; return; } const letters = selectionPath.map(c=>c.textContent).join(''); const rev = letters.split('').reverse().join(''); let matched=null; if (Object.keys(words).includes(letters) && !foundWords.includes(letters)) matched=letters; else if (Object.keys(words).includes(rev) && !foundWords.includes(rev)) matched=rev; if(matched){ foundWords.push(matched); localStorage.setItem('foundWords', JSON.stringify(foundWords)); selectionPath.forEach(c=>{ c.classList.remove('selected'); c.classList.add('found'); }); updateWordList(matched); if(foundWords.length===Object.keys(words).length){ document.getElementById('banner').style.display='block'; } } else { selectionPath.forEach(c=>c.classList.remove('selected')); } selectionPath=[]; stepRow=stepCol=null; }
+    // Selection with pointer events
+    let isDragging = false;
+    let selection = [];
+    let startCell = null;
+    let lastAdded = null;
 
-    fillEmptyCells(); renderGrid(); window.addEventListener('load', recomputeGridSize); window.addEventListener('resize', debounce(recomputeGridSize,120)); window.addEventListener('orientationchange', debounce(recomputeGridSize,120));
+    function clearSelection(){
+      selection.forEach(td => td.classList.remove('selected'));
+      selection = [];
+      startCell = lastAdded = null;
+    }
+
+    function addToSelection(td){
+      if (!td || selection.includes(td)) return;
+      if (!startCell){
+        startCell = td;
+        selection.push(td);
+        td.classList.add('selected');
+        lastAdded = td;
+        return;
+      }
+      const sr = parseInt(startCell.dataset.row,10);
+      const sc = parseInt(startCell.dataset.col,10);
+      const r = parseInt(td.dataset.row,10);
+      const c = parseInt(td.dataset.col,10);
+      const dr = r - sr;
+      const dc = c - sc;
+      const g = gcd2(Math.abs(dr), Math.abs(dc));
+      if (g === 0) return;
+      const stepR = dr / g;
+      const stepC = dc / g;
+
+      const path = [];
+      for (let k=0;k<=g;k++){
+        const rr = sr + stepR * k;
+        const cc = sc + stepC * k;
+        const el = grid.querySelector(`td[data-row="${rr}"][data-col="${cc}"]`);
+        if (!el) return;
+        path.push(el);
+      }
+
+      selection.forEach(e => e.classList.remove('selected'));
+      selection = path.slice();
+      selection.forEach(e => e.classList.add('selected'));
+      lastAdded = td;
+    }
+
+    function gcd2(a,b){ if(!a) return b; if(!b) return a; while(b){ const t=a%b; a=b; b=t; } return a; }
+
+    function finalizeSelection(){
+      if (!selection || selection.length < 2){ clearSelection(); return; }
+      const letters = selection.map(td=>td.textContent).join('');
+      const lettersRev = selection.map(td=>td.textContent).reverse().join('');
+      let matched = null;
+      if (Object.keys(words).includes(letters)) matched = letters;
+      else if (Object.keys(words).includes(lettersRev)) matched = lettersRev;
+
+      if (matched && !foundWords.has(matched)){
+        foundWords.add(matched);
+        localStorage.setItem('foundWords', JSON.stringify(Array.from(foundWords)));
+        const path = placements[matched];
+        if (path){
+          path.forEach(i => {
+            const [r,c] = rc(i);
+            const td = grid.querySelector(`td[data-row="${r}"][data-col="${c}"]`);
+            if (td){
+              td.classList.add('found');
+              td.classList.remove('selected');
+            }
+          });
+        }
+        const el = document.getElementById(`word-${matched}`);
+        if (el) el.classList.add('foundWord');
+
+        captions.textContent = `${matched} — ${words[matched] || ''}`;
+
+        if (Object.keys(words).every(w=>foundWords.has(w))){
+          banner.style.display = 'block';
+        }
+      } else {
+        selection.forEach(td => td.classList.remove('selected'));
+      }
+      selection = [];
+      startCell = lastAdded = null;
+    }
+
+    // Pointer event handlers
+    grid.addEventListener('pointerdown', function(e){
+      const td = e.target.closest('td');
+      if (!td) return;
+      e.preventDefault();
+      grid.setPointerCapture(e.pointerId);
+      isDragging = true;
+      gridWrapper.style.overflow = 'hidden';
+      clearSelection();
+      addToSelection(td);
+    });
+
+    grid.addEventListener('pointermove', function(e){
+      if (!isDragging) return;
+      const el = document.elementFromPoint(e.clientX, e.clientY);
+      const td = el && el.closest ? el.closest('td') : null;
+      if (!td) return;
+      addToSelection(td);
+    });
+
+    grid.addEventListener('pointerup', function(e){
+      if (!isDragging) return;
+      try { grid.releasePointerCapture && grid.releasePointerCapture(e.pointerId); } catch {}
+      isDragging = false;
+      gridWrapper.style.overflow = '';
+      finalizeSelection();
+    });
+
+    grid.addEventListener('pointercancel', function(e){
+      if (!isDragging) return;
+      try { grid.releasePointerCapture && grid.releasePointerCapture(e.pointerId); } catch {}
+      isDragging = false;
+      gridWrapper.style.overflow = '';
+      clearSelection();
+    });
+
+    document.getElementById('resetBtn').addEventListener('click', function(){
+      localStorage.removeItem('foundWords');
+      foundWords.clear();
+      banner.style.display = 'none';
+      location.reload();
+    });
+
+    (function init(){
+      for (let i=0;i<puzzle.length;i++) puzzle[i] = null;
+      Object.keys(words).forEach(w => delete placements[w]);
+
+      const wordKeys = Object.keys(words).sort((a,b)=>b.length - a.length);
+      const unplaced = [];
+      wordKeys.forEach(w => { if (!placeWord(w)) unplaced.push(w); });
+      if (unplaced.length){ unplaced.forEach(w => { if (!placeWord(w, 3000)) console.warn('Failed to place', w); }); }
+      fillEmptyCells();
+      renderGrid();
+      renderWordList();
+
+      Array.from(foundWords).forEach(w => {
+        const path = placements[w];
+        if (path){
+          path.forEach(i => {
+            const [r,c] = rc(i);
+            const td = grid.querySelector(`td[data-row="${r}"][data-col="${c}"]`);
+            if (td) td.classList.add('found');
+          });
+          const el = document.getElementById(`word-${w}`);
+          if (el) el.classList.add('foundWord');
+        }
+      });
+
+      if (Object.keys(words).every(w=>foundWords.has(w))){ banner.style.display = 'block'; }
+
+      recomputeGridSize();
+      window.addEventListener('resize', debounce(recomputeGridSize, 120));
+      window.addEventListener('orientationchange', debounce(recomputeGridSize, 120));
+    })();
+
+    function debounce(fn, wait){ let t; return function(){ clearTimeout(t); t=setTimeout(()=>fn.apply(this,arguments), wait); }; }
   </script>
 </body>
 </html>
-```
