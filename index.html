@@ -52,8 +52,8 @@
       cursor: pointer;
       padding: 0;
       outline: none;
-      border-radius: 4px;
-      transition: background-color 120ms, transform 80ms;
+      border-radius: 6px;
+      transition: background-color 140ms, transform 80ms, box-shadow 200ms;
       font-weight: 600;
       font-size: 0.9rem;
       width: var(--cell-size);
@@ -64,8 +64,16 @@
     }
 
     .selected { background-color: #cce5ff; transform: scale(1.02); }
-    .found { background-color: #b2f2bb; font-weight: bold; color: #064e12; }
-    .foundWord { text-decoration: line-through; color: #999; display: inline-block; margin:0.15rem 0.4rem; }
+    /* stronger persistent found style: distinct color, outline, and subtle glow */
+    .found {
+      background: linear-gradient(180deg,#daf7d7 0%, #b2f2bb 100%);
+      color: #0a4b11;
+      box-shadow: inset 0 0 0 3px rgba(6,78,18,0.12), 0 6px 14px rgba(6,78,18,0.06);
+      border: 1px solid #0a4b11;
+      transform: none;
+    }
+
+    .foundWord { text-decoration: line-through; color: #666; display: inline-block; margin:0.15rem 0.4rem; font-weight:700 }
 
     h1 { font-size: 1.25rem; margin: 0.5rem 0; }
     p { margin: 0.25rem 0 0.75rem; }
@@ -125,7 +133,10 @@
     // State
     const puzzle = new Array(gridSize * gridSize).fill(null);
     const placements = {};
+    // store foundWords set and also foundPositions map for exact indices per word
     const foundWords = new Set(JSON.parse(localStorage.getItem("foundWords") || "[]"));
+    const foundPositions = JSON.parse(localStorage.getItem("foundPositions") || "{}");
+
     const grid = document.getElementById('grid');
     const gridWrapper = document.getElementById('gridWrapper');
     const wordListDiv = document.getElementById('wordList');
@@ -214,6 +225,12 @@
     }
 
     function isCellInFound(i){
+      // first check foundPositions as authoritative
+      for (const w in foundPositions){
+        const arr = foundPositions[w] || [];
+        if (arr.indexOf(i) !== -1) return true;
+      }
+      // fallback to placements
       for (const w of foundWords){
         const path = placements[w];
         if (!path) continue;
@@ -222,13 +239,16 @@
       return false;
     }
 
-    // Responsive sizing
+    // Responsive sizing (fit full grid if possible)
     function recomputeGridSize(){
       const padding = 24;
-      const available = Math.max(120, Math.min(window.innerWidth - padding, gridWrapper.clientWidth || window.innerWidth - padding));
-      const cell = Math.floor(available / Math.min(gridSize, 12));
-      const size = Math.max(22, Math.min(52, cell));
-      document.documentElement.style.setProperty('--cell-size', size + 'px');
+      const availableWidth = Math.max(120, Math.min(window.innerWidth - padding, gridWrapper.clientWidth || window.innerWidth - padding));
+      let target = Math.floor(availableWidth / gridSize);
+      const minSize = 20;
+      const maxSize = 52;
+      if (target < minSize) target = minSize;
+      if (target > maxSize) target = maxSize;
+      document.documentElement.style.setProperty('--cell-size', target + 'px');
     }
 
     // Selection with pointer events
@@ -280,6 +300,20 @@
 
     function gcd2(a,b){ if(!a) return b; if(!b) return a; while(b){ const t=a%b; a=b; b=t; } return a; }
 
+    // mark cells as found (accepts indices array or uses placements)
+    function markCellsFoundByWord(word, indices){
+      const path = indices || placements[word] || [];
+      path.forEach(i => {
+        const [r,c] = rc(i);
+        const td = grid.querySelector(`td[data-row="${r}"][data-col="${c}"]`);
+        if (td){
+          td.classList.add('found');
+          td.classList.remove('selected');
+          td.dataset.found = word;
+        }
+      });
+    }
+
     function finalizeSelection(){
       if (!selection || selection.length < 2){ clearSelection(); return; }
       const letters = selection.map(td=>td.textContent).join('');
@@ -291,20 +325,19 @@
       if (matched && !foundWords.has(matched)){
         foundWords.add(matched);
         localStorage.setItem('foundWords', JSON.stringify(Array.from(foundWords)));
-        const path = placements[matched];
-        if (path){
-          path.forEach(i => {
-            const [r,c] = rc(i);
-            const td = grid.querySelector(`td[data-row="${r}"][data-col="${c}"]`);
-            if (td){
-              td.classList.add('found');
-              td.classList.remove('selected');
-            }
-          });
-        }
+
+        // Persist the exact indices of the successful selection — ensures mobile highlight reliability
+        const selIndices = selection.map(td => parseInt(td.dataset.index,10));
+        foundPositions[matched] = selIndices;
+        localStorage.setItem('foundPositions', JSON.stringify(foundPositions));
+
+        // Immediately mark those cells as found so mobile shows highlight right away
+        markCellsFoundByWord(matched, selIndices);
+
         const el = document.getElementById(`word-${matched}`);
         if (el) el.classList.add('foundWord');
 
+        // Show the sentence associated with the found word
         captions.textContent = `${matched} — ${words[matched] || ''}`;
 
         if (Object.keys(words).every(w=>foundWords.has(w))){
@@ -317,17 +350,27 @@
       startCell = lastAdded = null;
     }
 
-    // Pointer event handlers
+    // Pointer & touch event handlers (replace the existing pointer handlers with this block)
+    // Adds logging + touch fallback for devices that drop pointer events.
+    function reportSelection(tag){
+      try {
+        const indices = selection.map(td => parseInt(td.dataset.index,10));
+        const letters = selection.map(td => td.textContent).join('');
+        console.log(`[grid] ${tag}`, {count: selection.length, indices, letters});
+      } catch(e) { console.log('[grid] reportSelection error', e); }
+    }
+
     grid.addEventListener('pointerdown', function(e){
       const td = e.target.closest('td');
       if (!td) return;
       e.preventDefault();
-      grid.setPointerCapture(e.pointerId);
+      grid.setPointerCapture && grid.setPointerCapture(e.pointerId);
       isDragging = true;
       gridWrapper.style.overflow = 'hidden';
       clearSelection();
       addToSelection(td);
-    });
+      reportSelection('pointerdown');
+    }, {passive:false});
 
     grid.addEventListener('pointermove', function(e){
       if (!isDragging) return;
@@ -335,15 +378,17 @@
       const td = el && el.closest ? el.closest('td') : null;
       if (!td) return;
       addToSelection(td);
-    });
+      reportSelection('pointermove');
+    }, {passive:false});
 
     grid.addEventListener('pointerup', function(e){
       if (!isDragging) return;
       try { grid.releasePointerCapture && grid.releasePointerCapture(e.pointerId); } catch {}
       isDragging = false;
       gridWrapper.style.overflow = '';
+      reportSelection('pointerup-before-finalize');
       finalizeSelection();
-    });
+    }, {passive:false});
 
     grid.addEventListener('pointercancel', function(e){
       if (!isDragging) return;
@@ -351,11 +396,55 @@
       isDragging = false;
       gridWrapper.style.overflow = '';
       clearSelection();
-    });
+      reportSelection('pointercancel');
+    }, {passive:false});
+
+    // Touch fallbacks for browsers that prefer touch events (Android Chrome sometimes behaves better with explicit touch handlers)
+    grid.addEventListener('touchstart', function(e){
+      const t = e.touches && e.touches[0];
+      if (!t) return;
+      e.preventDefault();
+      const el = document.elementFromPoint(t.clientX, t.clientY);
+      const td = el && el.closest ? el.closest('td') : null;
+      if (!td) return;
+      isDragging = true;
+      gridWrapper.style.overflow = 'hidden';
+      clearSelection();
+      addToSelection(td);
+      reportSelection('touchstart');
+    }, {passive:false});
+
+    grid.addEventListener('touchmove', function(e){
+      if (!isDragging) return;
+      const t = e.touches && e.touches[0];
+      if (!t) return;
+      const el = document.elementFromPoint(t.clientX, t.clientY);
+      const td = el && el.closest ? el.closest('td') : null;
+      if (!td) return;
+      addToSelection(td);
+      reportSelection('touchmove');
+    }, {passive:false});
+
+    grid.addEventListener('touchend', function(e){
+      if (!isDragging) return;
+      // Try to add last touch position (use changedTouches)
+      const t = e.changedTouches && e.changedTouches[0];
+      if (t){
+        const el = document.elementFromPoint(t.clientX, t.clientY);
+        const td = el && el.closest ? el.closest('td') : null;
+        if (td) addToSelection(td);
+      }
+      isDragging = false;
+      gridWrapper.style.overflow = '';
+      reportSelection('touchend-before-finalize');
+      finalizeSelection();
+    }, {passive:false});
 
     document.getElementById('resetBtn').addEventListener('click', function(){
       localStorage.removeItem('foundWords');
+      localStorage.removeItem('foundPositions');
       foundWords.clear();
+      for (const k in foundPositions) delete foundPositions[k];
       banner.style.display = 'none';
       location.reload();
     });
@@ -372,14 +461,19 @@
       renderGrid();
       renderWordList();
 
+      // re-apply found highlight from localStorage using saved positions first
+      Object.keys(foundPositions).forEach(w => {
+        const indices = foundPositions[w] || [];
+        if (indices.length) markCellsFoundByWord(w, indices);
+        const el = document.getElementById(`word-${w}`);
+        if (el) el.classList.add('foundWord');
+      });
+
+      // fallback: if foundWords exists but foundPositions missing, try to use placements
       Array.from(foundWords).forEach(w => {
-        const path = placements[w];
-        if (path){
-          path.forEach(i => {
-            const [r,c] = rc(i);
-            const td = grid.querySelector(`td[data-row="${r}"][data-col="${c}"]`);
-            if (td) td.classList.add('found');
-          });
+        if (!foundPositions[w]){
+          const path = placements[w];
+          if (path) markCellsFoundByWord(w, path);
           const el = document.getElementById(`word-${w}`);
           if (el) el.classList.add('foundWord');
         }
@@ -392,6 +486,7 @@
       window.addEventListener('orientationchange', debounce(recomputeGridSize, 120));
     })();
 
+    // tiny debounce
     function debounce(fn, wait){ let t; return function(){ clearTimeout(t); t=setTimeout(()=>fn.apply(this,arguments), wait); }; }
   </script>
 </body>
