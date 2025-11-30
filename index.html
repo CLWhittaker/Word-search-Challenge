@@ -234,28 +234,42 @@
       return false;
     }
 
-    // Improved recomputeGridSize (Option B)
+    // Conservative/resilient recomputeGridSize
     function recomputeGridSize(){
-      const padding = 24;
-      const wrapperWidth = gridWrapper && gridWrapper.clientWidth ? gridWrapper.clientWidth : window.innerWidth - padding;
-      const availableWidth = Math.max(120, Math.min(window.innerWidth - padding, wrapperWidth));
+      // safety margins (px)
+      const pagePadding = 24;         // matches other code
+      const extraSafety = 32;        // extra padding to avoid overflow on small/rounded screens
 
+      // pick the smaller of wrapper width and viewport width, then subtract safety margins
+      const wrapperWidth = (gridWrapper && gridWrapper.clientWidth) ? gridWrapper.clientWidth : window.innerWidth;
+      let availableWidth = Math.min(window.innerWidth, wrapperWidth) - pagePadding - extraSafety;
+      if (availableWidth < 120) availableWidth = 120; // absolute floor
+
+      // account for devicePixelRatio (prevents oversized sizing on high-dpi phones)
+      const dpr = window.devicePixelRatio || 1;
+      availableWidth = Math.floor(availableWidth / dpr);
+
+      // gap handling
       const gap = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--cell-gap')) || 2;
       const totalGaps = (gridSize - 1) * gap;
 
+      // compute a cell size that fits
       let target = Math.floor((availableWidth - totalGaps) / gridSize);
 
-      const minSize = 16; // allow slightly smaller for small phones
+      // enforce usable min/max
+      const minSize = 12; // slightly smaller to ensure fit on tiny phones
       const maxSize = 48;
       if (target < minSize) target = minSize;
       if (target > maxSize) target = maxSize;
 
       document.documentElement.style.setProperty('--cell-size', target + 'px');
 
+      // also set explicit table width so layout is predictable
       try {
         const gridPx = target * gridSize + totalGaps;
         grid.style.width = gridPx + 'px';
-      } catch(e) {
+        grid.style.maxWidth = '100%';
+      } catch(e){
         // ignore if grid not ready
       }
     }
