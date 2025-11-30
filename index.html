@@ -24,7 +24,8 @@
       max-width: 100vw;
       margin: 0 auto 1rem;
       -webkit-overflow-scrolling: touch;
-      touch-action: pan-y;
+      /* allow vertical pan and pinch-zoom on the wrapper */
+      touch-action: pan-y pinch-zoom;
       border-radius: 8px;
       padding: 6px;
       background: transparent;
@@ -36,10 +37,15 @@
       border-collapse: collapse;
       border-spacing: 0;
       margin: 0 auto;
-      /* Allow pinch/zoom; single-finger selection still handled by handlers below */
+      /* Allow pinch/zoom; single-finger selection handled by handlers */
       touch-action: auto;
       background: transparent;
       user-select: none;
+
+      /* safety fallback so table doesn't overflow if JS hasn't adjusted sizing yet */
+      box-sizing: border-box;
+      max-width: 100%;
+      width: calc(22 * var(--cell-size) + 22 * var(--cell-gap));
     }
 
     #grid td {
@@ -65,7 +71,6 @@
     }
 
     .selected { background-color: #cce5ff; transform: scale(1.02); }
-    /* stronger persistent found style: distinct color, outline, and subtle glow */
     .found {
       background: linear-gradient(180deg,#daf7d7 0%, #b2f2bb 100%);
       color: #0a4b11;
@@ -107,7 +112,6 @@
   <script>
     // CONFIG
     const gridSize = 22;
-    // 20 words with sentence shown when found
     const words = {
       ACADEME: "Where scrolls are born and pedants duel in dusty silence.",
       ACCUSED: "Marked by whispers, but not yet claimed by truth.",
@@ -134,7 +138,6 @@
     // State
     const puzzle = new Array(gridSize * gridSize).fill(null);
     const placements = {};
-    // store foundWords set and also foundPositions map for exact indices per word
     const foundWords = new Set(JSON.parse(localStorage.getItem("foundWords") || "[]"));
     const foundPositions = JSON.parse(localStorage.getItem("foundPositions") || "{}");
 
@@ -144,12 +147,10 @@
     const banner = document.getElementById('banner');
     const captions = document.getElementById('captions');
 
-    // Utility
     function idx(row, col){ return row * gridSize + col; }
     function rc(index){ return [Math.floor(index / gridSize), index % gridSize]; }
     function randInt(n){ return Math.floor(Math.random() * n); }
 
-    // Place words into puzzle
     function placeWord(word, maxAttempts = 1000) {
       const dirs = [[0,1],[1,0],[0,-1],[-1,0],[1,1],[-1,-1],[1,-1],[-1,1]];
       const L = word.length;
@@ -158,12 +159,10 @@
         const dr=dir[0], dc=dir[1];
         let r = randInt(gridSize);
         let c = randInt(gridSize);
-
         const endR = r + dr*(L-1);
         const endC = c + dc*(L-1);
         if (endR < 0 || endR >= gridSize || endC < 0 || endC >= gridSize) continue;
 
-        // check collisions
         let path = [];
         let ok = true;
         for (let k=0;k<L;k++){
@@ -175,7 +174,6 @@
         }
         if (!ok) continue;
 
-        // place
         for (let k=0;k<L;k++){
           puzzle[path[k]] = word[k];
         }
@@ -191,7 +189,6 @@
       }
     }
 
-    // Render word list
     function renderWordList(){
       const keys = Object.keys(words);
       wordListDiv.innerHTML = '<strong>Words to Find:</strong><br>';
@@ -206,7 +203,6 @@
       });
     }
 
-    // Build grid DOM
     function renderGrid(){
       grid.innerHTML = '';
       for (let r=0;r<gridSize;r++){
@@ -226,12 +222,10 @@
     }
 
     function isCellInFound(i){
-      // first check foundPositions as authoritative
       for (const w in foundPositions){
         const arr = foundPositions[w] || [];
         if (arr.indexOf(i) !== -1) return true;
       }
-      // fallback to placements
       for (const w of foundWords){
         const path = placements[w];
         if (!path) continue;
@@ -240,19 +234,33 @@
       return false;
     }
 
-    // Responsive sizing (fit full grid if possible)
+    // Improved recomputeGridSize (Option B)
     function recomputeGridSize(){
       const padding = 24;
-      const availableWidth = Math.max(120, Math.min(window.innerWidth - padding, gridWrapper.clientWidth || window.innerWidth - padding));
-      let target = Math.floor(availableWidth / gridSize);
-      const minSize = 20;
-      const maxSize = 52;
+      const wrapperWidth = gridWrapper && gridWrapper.clientWidth ? gridWrapper.clientWidth : window.innerWidth - padding;
+      const availableWidth = Math.max(120, Math.min(window.innerWidth - padding, wrapperWidth));
+
+      const gap = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--cell-gap')) || 2;
+      const totalGaps = (gridSize - 1) * gap;
+
+      let target = Math.floor((availableWidth - totalGaps) / gridSize);
+
+      const minSize = 16; // allow slightly smaller for small phones
+      const maxSize = 48;
       if (target < minSize) target = minSize;
       if (target > maxSize) target = maxSize;
+
       document.documentElement.style.setProperty('--cell-size', target + 'px');
+
+      try {
+        const gridPx = target * gridSize + totalGaps;
+        grid.style.width = gridPx + 'px';
+      } catch(e) {
+        // ignore if grid not ready
+      }
     }
 
-    // Selection with pointer events
+    // Selection state
     let isDragging = false;
     let selection = [];
     let startCell = null;
@@ -301,7 +309,6 @@
 
     function gcd2(a,b){ if(!a) return b; if(!b) return a; while(b){ const t=a%b; a=b; b=t; } return a; }
 
-    // mark cells as found (accepts indices array or uses placements)
     function markCellsFoundByWord(word, indices){
       const path = indices || placements[word] || [];
       path.forEach(i => {
@@ -327,18 +334,15 @@
         foundWords.add(matched);
         localStorage.setItem('foundWords', JSON.stringify(Array.from(foundWords)));
 
-        // Persist the exact indices of the successful selection — ensures mobile highlight reliability
         const selIndices = selection.map(td => parseInt(td.dataset.index,10));
         foundPositions[matched] = selIndices;
         localStorage.setItem('foundPositions', JSON.stringify(foundPositions));
 
-        // Immediately mark those cells as found so mobile shows highlight right away
         markCellsFoundByWord(matched, selIndices);
 
         const el = document.getElementById(`word-${matched}`);
         if (el) el.classList.add('foundWord');
 
-        // Show the sentence associated with the found word
         captions.textContent = `${matched} — ${words[matched] || ''}`;
 
         if (Object.keys(words).every(w=>foundWords.has(w))){
@@ -351,7 +355,7 @@
       startCell = lastAdded = null;
     }
 
-    // Pointer & touch event handlers (robust + logging)
+    // Event handlers (robust + touch-friendly)
     function reportSelection(tag){
       try {
         const indices = selection.map(td => parseInt(td.dataset.index,10));
@@ -363,8 +367,15 @@
     grid.addEventListener('pointerdown', function(e){
       const td = e.target.closest('td');
       if (!td) return;
-      e.preventDefault();
-      grid.setPointerCapture && grid.setPointerCapture(e.pointerId);
+
+      // For touch pointers, avoid preventDefault so pinch/zoom can work.
+      // Keep preventDefault for mouse/pen to preserve expected drag behavior.
+      if (e.pointerType !== 'touch') {
+        e.preventDefault();
+      }
+
+      try { grid.setPointerCapture && grid.setPointerCapture(e.pointerId); } catch {}
+
       isDragging = true;
       gridWrapper.style.overflow = 'hidden';
       clearSelection();
@@ -399,12 +410,12 @@
       reportSelection('pointercancel');
     }, {passive:false});
 
-    // Touch fallbacks — allow pinch/zoom (only preventDefault for single-touch)
+    // Touch fallbacks — only preventDefault for single-touch interactions
     grid.addEventListener('touchstart', function(e){
       const tCount = e.touches ? e.touches.length : 0;
       const t = e.touches && e.touches[0];
       if (!t) return;
-      if (tCount === 1) e.preventDefault(); // don't block multi-touch (pinch) gestures
+      if (tCount === 1) e.preventDefault(); // allow multi-touch (pinch)
       const el = document.elementFromPoint(t.clientX, t.clientY);
       const td = el && el.closest ? el.closest('td') : null;
       if (!td) return;
@@ -430,7 +441,6 @@
 
     grid.addEventListener('touchend', function(e){
       if (!isDragging) return;
-      // Try to add last touch position (use changedTouches)
       const t = e.changedTouches && e.changedTouches[0];
       if (t){
         const el = document.elementFromPoint(t.clientX, t.clientY);
@@ -489,7 +499,6 @@
       window.addEventListener('orientationchange', debounce(recomputeGridSize, 120));
     })();
 
-    // tiny debounce
     function debounce(fn, wait){ let t; return function(){ clearTimeout(t); t=setTimeout(()=>fn.apply(this,arguments), wait); }; }
   </script>
 </body>
