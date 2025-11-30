@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>The Scroll of Monumental Mayhem </title>
+  <title>The Scroll of Monumental Mayhem</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     body {
@@ -76,13 +76,13 @@
     <table id="grid" role="grid" aria-label="Word search grid"></table>
   </div>
 
-  <div id="banner" style="display: none;">🧦 You’ve earned your ceremonial socks and scrollsmith badge. Onward to the next ritual.</div>
+  <div id="banner" style="display: none;">🧦 You've earned your ceremonial socks and scrollsmith badge. Onward to the next ritual.</div>
   <button onclick="resetScroll()">🔄 Reset Scroll</button>
   <div id="captions"></div>
 
   <script>
     const gridSize = 22;
-    const words = [MORGELLONS, PANDAS, POEMS, PACHYGYRIA, TANGIER, BRUGADA, ALSTROM, MOYAMOYA, BIRDSHOT, CRONKHITE, CADASIL, RABSON, ANCYLOSTOMIASIS, PARAPSORIASIS, ALKAPTONURIA, LIPOIDPROTEINOSIS, ERYTHROMELALGIA, METHEMOGLOBINEMIA, ICHTHYOSIS, TRICHOTILLOMANIA];
+    const words = { ACADEME: "Where scrolls are born and pedants duel in dusty silence.", ACCUSED: "Marked by whispers, but not yet claimed by truth.", AMAZEMENT: "The gasp that follows a moonbeam's unexpected arrival.", COMPROMISE: "A handshake between chaos and calm, sealed with ceremonial socks.", DEAFENING: "The silence that screams louder than any outbreak.", GNARLED: "Twisted by time, but still rooted in ritual.", LAUGHABLE: "When the absurd becomes sacred and socks become scrolls.", MADCAP: "The jester's sprint through monumental mayhem.", MAJESTIC: "Crowned not by gold, but by resilience and mismatched laundry.", MIMIC: "A chest you don't want to find.", MONUMENTAL: "Built from grief, grit, and the bones of canceled plans.", MOONBEAM: "A soft rebellion against remorseless nights.", NOISELESS: "The hush before the banner rises.", OBSCENE: "Too raw for academe, too real for denial.", OUTBREAK: "The ritual of masks, scrolls, and sudden pivots.", PANDERS: "Whispers that flatter, but never inscribe.", PEDANT: "Keeper of rules, challenger of lore.", RADIANCE: "The glow that follows a found word.", SWAGGER: "The strut of survival in socked feet.", REMORSELESS: "Unyielding as grief, sacred as scrollsmith fire." };
 
     const puzzle = Array(gridSize * gridSize).fill(null);
     const grid = document.getElementById("grid");
