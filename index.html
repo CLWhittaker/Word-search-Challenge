@@ -36,7 +36,8 @@
       border-collapse: collapse;
       border-spacing: 0;
       margin: 0 auto;
-      touch-action: none;
+      /* Allow pinch/zoom; single-finger selection still handled by handlers below */
+      touch-action: auto;
       background: transparent;
       user-select: none;
     }
@@ -350,8 +351,7 @@
       startCell = lastAdded = null;
     }
 
-    // Pointer & touch event handlers (replace the existing pointer handlers with this block)
-    // Adds logging + touch fallback for devices that drop pointer events.
+    // Pointer & touch event handlers (robust + logging)
     function reportSelection(tag){
       try {
         const indices = selection.map(td => parseInt(td.dataset.index,10));
@@ -399,11 +399,12 @@
       reportSelection('pointercancel');
     }, {passive:false});
 
-    // Touch fallbacks for browsers that prefer touch events (Android Chrome sometimes behaves better with explicit touch handlers)
+    // Touch fallbacks — allow pinch/zoom (only preventDefault for single-touch)
     grid.addEventListener('touchstart', function(e){
+      const tCount = e.touches ? e.touches.length : 0;
       const t = e.touches && e.touches[0];
       if (!t) return;
-      e.preventDefault();
+      if (tCount === 1) e.preventDefault(); // don't block multi-touch (pinch) gestures
       const el = document.elementFromPoint(t.clientX, t.clientY);
       const td = el && el.closest ? el.closest('td') : null;
       if (!td) return;
@@ -415,9 +416,11 @@
     }, {passive:false});
 
     grid.addEventListener('touchmove', function(e){
+      const tCount = e.touches ? e.touches.length : 0;
       if (!isDragging) return;
       const t = e.touches && e.touches[0];
       if (!t) return;
+      if (tCount === 1) e.preventDefault();
       const el = document.elementFromPoint(t.clientX, t.clientY);
       const td = el && el.closest ? el.closest('td') : null;
       if (!td) return;
